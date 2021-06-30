@@ -1,0 +1,35 @@
+name: Scala CI
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  release:
+    runs-on: 'ubuntu-latest'
+    steps:
+      - name: 'Checkout Repository'
+        uses: 'actions/checkout@v2'
+      - name: 'Setup Java'
+        uses: 'actions/setup-java@v1'
+        with:
+          java-version: 11
+      - name: 'Cache SBT And Dependencies'
+        uses: 'actions/cache@v2'
+        with:
+          path: |
+            ~/.ivy2/cache
+            ~/.sbt
+          key: 'os-${{ runner.os }}-sbt-${{ hashFiles(''build.sbt'', ''project/build.properties'', ''project/plugins.sbt'') }}'
+          restore-keys: 'os-${{ runner.os }}-sbt-'
+      - name: 'Import GPG Key'
+        uses: 'crazy-max/ghaction-import-gpg@v3'
+        with:
+          gpg-private-key: '${{ secrets.GPG_PRIVATE_KEY }}'
+          passphrase: '${{ secrets.GPG_PASSPHRASE }}'
+      - name: 'Publish Release'
+        run: 'sbt  publishSigned sonatypeBundleRelease'
+        env:
+          OSSRH_USER: '${{ secrets.OSSRH_USER}}'
+          OSSRH_PASSWORD: '${{ secrets.OSSRH_TOKEN}}'
