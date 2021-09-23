@@ -23,25 +23,130 @@ import scala.util.control.Breaks._
  * This class handles module field details.
  */
 object  Utility {
-
-  private val apiTypeVsdataType:mutable.HashMap[String,String] = mutable.HashMap()
-  private val apiTypeVsStructureName:mutable.HashMap[String,String] = mutable.HashMap()
+  private val apiTypeVsDataType: mutable.HashMap[String,String] = mutable.HashMap()
+  private val apiTypeVsStructureName: mutable.HashMap[String,String] = mutable.HashMap()
   private val LOGGER = Logger.getLogger(classOf[SDKLogger].getName)
-  private var newFile:Boolean = false
-  private var getModifiedModules:Boolean = false
-  private var moduleAPIName:String = ""
-  private var forceRefresh:Boolean = false
   private val JSONDETAILS = Initializer.jsonDetails
-  var apiSupportedModule = new mutable.HashMap[String,String]()
+  private var newFile: Boolean = false
+  private var getModifiedModules: Boolean = false
+  private var forceRefresh: Boolean = false
+  var apiSupportedModule = new JSONObject()
+  private var moduleAPIName: String = ""
 
-  def verifyPhotoSupport(moduleAPIName: String): Unit =synchronized {
-    return
+  def assertNotNull(value: Object, errorCode : String, errorMessage: String) {
+    if(value == null) {
+      throw new SDKException(errorCode, errorMessage)
+    }
   }
 
-  def getFields(moduleAPIName: String): Unit =synchronized {
+  private def fileExistsFlow(moduleAPIName: String, recordFieldDetailsPath: String, lastModifiedTime1: String): Unit = synchronized {
+    var recordFieldDetailsJson = Initializer.getJSON(recordFieldDetailsPath)
+
+    var lastModifiedTime = lastModifiedTime1
+
+    if (Initializer.getInitializer.getSDKConfig.getAutoRefreshFields && !newFile && !getModifiedModules && (recordFieldDetailsJson.optString(Constants.FIELDS_LAST_MODIFIED_TIME).isEmpty || forceRefresh || (System.currentTimeMillis - recordFieldDetailsJson.getString(Constants.FIELDS_LAST_MODIFIED_TIME).toLong) > 3600000)) {
+      getModifiedModules = true
+
+      if (!forceRefresh && recordFieldDetailsJson.has(Constants.FIELDS_LAST_MODIFIED_TIME)) lastModifiedTime =  recordFieldDetailsJson.getString(Constants.FIELDS_LAST_MODIFIED_TIME)
+      else lastModifiedTime = null
+
+      modifyFields(recordFieldDetailsPath, lastModifiedTime)
+
+      getModifiedModules = false
+
+    }
+    else if (!Initializer.getInitializer.getSDKConfig.getAutoRefreshFields && forceRefresh && !getModifiedModules) {
+      getModifiedModules = true
+
+      modifyFields(recordFieldDetailsPath, lastModifiedTime)
+
+      getModifiedModules = false
+    }
+
+    recordFieldDetailsJson = Initializer.getJSON(recordFieldDetailsPath)
+
+    if (moduleAPIName == null || (recordFieldDetailsJson.has(moduleAPIName.toLowerCase) && recordFieldDetailsJson.get(moduleAPIName.toLowerCase) != null)) return
+    else {
+      fillDatatype()
+
+      recordFieldDetailsJson.put(moduleAPIName.toLowerCase, new JSONObject)
+
+      var file = new FileWriter(recordFieldDetailsPath)
+      file.flush()
+      file.write(recordFieldDetailsJson.toString) // write existing data + dummy
+
+      file.flush()
+      file.close()
+      val fieldDetails = getFieldsDetails(moduleAPIName)
+
+      recordFieldDetailsJson = Initializer.getJSON(recordFieldDetailsPath)
+      recordFieldDetailsJson.put(moduleAPIName.toLowerCase, fieldDetails)
+      file = new FileWriter(recordFieldDetailsPath)
+      file.flush()
+      file.write(recordFieldDetailsJson.toString) // overwrting the dummy +existing data
+
+      file.flush()
+      file.close()
+    }
+  }
+  
+  private def verifyModuleAPIName(moduleName: String): String = {
+    if(moduleName != null && Constants.DEFAULT_MODULENAME_VS_APINAME.contains(moduleName.toLowerCase) && Constants.DEFAULT_MODULENAME_VS_APINAME.get(moduleName.toLowerCase) != null) {
+      return Constants.DEFAULT_MODULENAME_VS_APINAME(moduleName.toLowerCase)
+    }
+
+    val recordFieldDetailsPath: String = getFileName
+
+    val recordFieldDetails = new File(recordFieldDetailsPath)
+
+    if(recordFieldDetails.exists) {
+      val fieldsJSON = Initializer.getJSON(recordFieldDetailsPath)
+
+      if(fieldsJSON.has(Constants.SDK_MODULE_METADATA) && fieldsJSON.getJSONObject(Constants.SDK_MODULE_METADATA).has(moduleName.toLowerCase)) {
+        return fieldsJSON.getJSONObject(Constants.SDK_MODULE_METADATA).getJSONObject(moduleName.toLowerCase).getString(Constants.API_NAME)
+      }
+    }
+
+    moduleName
+  }
+
+  private def setHandlerAPIPath(moduleAPIName: String,  handlerInstance: CommonAPIHandler) {
+    if(handlerInstance == null) {
+      return
+    }
+
+    var apiPath = handlerInstance.getAPIPath
+
+    if(apiPath.toLowerCase.contains(moduleAPIName.toLowerCase)) {
+      val apiPathSplit: Array[String] = apiPath.split("/")
+
+      for(index <- 0 until apiPathSplit.length) {
+        if(apiPathSplit(index).equalsIgnoreCase(moduleAPIName)){
+          apiPathSplit(index) = moduleAPIName
+        }
+        else if(Constants.DEFAULT_MODULENAME_VS_APINAME.contains(apiPathSplit(index).toLowerCase()) && Constants.DEFAULT_MODULENAME_VS_APINAME.get(apiPathSplit(index).toLowerCase) != null) {
+          apiPathSplit(index) = Constants.DEFAULT_MODULENAME_VS_APINAME(apiPathSplit(index).toLowerCase)
+        }
+      }
+
+      apiPath = apiPathSplit.mkString("/")
+
+      handlerInstance.setAPIPath(apiPath)
+    }
+  }
+
+  /**
+  * This method to fetch field details of the current module for the current user and store the result in a JSON file.
+  * 
+  * @param moduleAPIName A String containing the CRM module API name.
+  * @param handlerInstance A CommonAPIHandler Instance
+  * @throws SDKException 
+  */
+  def getFields(moduleAPIName: String, handlerInstance: CommonAPIHandler): Unit = synchronized {
     Utility.moduleAPIName = moduleAPIName
-    getFieldsInfo(Utility.moduleAPIName)
+    getFieldsInfo(Utility.moduleAPIName, handlerInstance)
   }
+
   /**
    * This method to fetch field details of the current module for the current user and store the result in a JSON file.
    *
@@ -49,79 +154,56 @@ object  Utility {
    * @throws SDKException Exception
    */
   @throws[SDKException]
-  def getFieldsInfo(moduleAPIName: String): Unit =synchronized {
-
+  def getFieldsInfo(moduleName: String, handlerInstance: CommonAPIHandler): Unit = synchronized {
     var recordFieldDetailsPath:String = null
-    var lastModifiedTime:String = null
+    var lastModifiedTime: String = null
+    var moduleAPIName: String = moduleName
 
     try {
       if (moduleAPIName != null && searchJSONDetails(moduleAPIName).isDefined) return
       val resourcesPath = new File(Initializer.getInitializer.getResourcePath + File.separator + Constants.FIELD_DETAILS_DIRECTORY)
       if (!resourcesPath.exists) resourcesPath.mkdirs
+      moduleAPIName = verifyModuleAPIName(moduleAPIName)
+      setHandlerAPIPath(moduleAPIName, handlerInstance)
+      if(handlerInstance != null && handlerInstance.getModuleAPIName == null && !Constants.SKIP_MODULES.contains(moduleAPIName.toLowerCase))  return
       recordFieldDetailsPath = getFileName
       val recordFieldDetails = new File(recordFieldDetailsPath)
+
       if (recordFieldDetails.exists) {
-        var recordFieldDetailsJson = Initializer.getJSON(recordFieldDetailsPath)
-        if (Initializer.getInitializer.getSDKConfig.getAutoRefreshFields && !newFile && !getModifiedModules && (recordFieldDetailsJson.optString(Constants.FIELDS_LAST_MODIFIED_TIME).isEmpty || forceRefresh || (System.currentTimeMillis - recordFieldDetailsJson.getString(Constants.FIELDS_LAST_MODIFIED_TIME).toLong) > 3600000)) {
-          getModifiedModules = true
-          if (recordFieldDetailsJson.has(Constants.FIELDS_LAST_MODIFIED_TIME)) lastModifiedTime =  recordFieldDetailsJson.getString(Constants.FIELDS_LAST_MODIFIED_TIME)
-          modifyFields(recordFieldDetailsPath, lastModifiedTime)
-          getModifiedModules = false
-        }
-        else if (!Initializer.getInitializer.getSDKConfig.getAutoRefreshFields && forceRefresh && !getModifiedModules) {
-          getModifiedModules = true
-          modifyFields(recordFieldDetailsPath, lastModifiedTime)
-          getModifiedModules = false
-        }
-        recordFieldDetailsJson = Initializer.getJSON(recordFieldDetailsPath)
-        if (moduleAPIName==null || recordFieldDetailsJson.has(moduleAPIName.toLowerCase)) return
-        else {
-          fillDatatype()
-          recordFieldDetailsJson.put(moduleAPIName.toLowerCase, new JSONObject)
-          var file = new FileWriter(recordFieldDetailsPath)
-          file.flush()
-          file.write(recordFieldDetailsJson.toString) // write existing data + dummy
-
-          file.flush()
-          file.close()
-          val fieldDetails = getFieldsDetails(moduleAPIName)
-          recordFieldDetailsJson = Initializer.getJSON(recordFieldDetailsPath)
-          recordFieldDetailsJson.put(moduleAPIName.toLowerCase, fieldDetails)
-          file = new FileWriter(recordFieldDetailsPath)
-          file.flush()
-          file.write(recordFieldDetailsJson.toString) // overwrting the dummy +existing data
-
-          file.flush()
-          file.close()
-        }
+        fileExistsFlow(moduleAPIName, recordFieldDetailsPath, lastModifiedTime)
       }
       else if (Initializer.getInitializer.getSDKConfig.getAutoRefreshFields) {
         newFile = true
         fillDatatype()
 
-        apiSupportedModule = if (apiSupportedModule.nonEmpty) apiSupportedModule
+        apiSupportedModule = if (apiSupportedModule.length() > 0) apiSupportedModule
         else getModules(null)
 
-        var recordFieldDetailsJson = new JSONObject
+        var recordFieldDetailsJson = if (recordFieldDetails.exists())  Initializer.getJSON(recordFieldDetailsPath) 
+        else new JSONObject
+
         recordFieldDetailsJson.put(Constants.FIELDS_LAST_MODIFIED_TIME, String.valueOf(System.currentTimeMillis))
 
-        for ( module <- apiSupportedModule.keySet ) {
-          if (!recordFieldDetailsJson.has(module.toLowerCase)) {
-            recordFieldDetailsJson.put(module.toLowerCase, new JSONObject)
-            var file = new FileWriter(recordFieldDetailsPath)
-            file.write(recordFieldDetailsJson.toString)
-            file.flush()
-            file.close() // file created with only dummy
+        if(apiSupportedModule.length() > 0) {
+          apiSupportedModule.keySet().forEach(module => {
+            if (!recordFieldDetailsJson.has(module.toLowerCase)) {
+              val moduleData = apiSupportedModule.getJSONObject(module.toLowerCase)
+              recordFieldDetailsJson.put(module.toLowerCase, new JSONObject)
+              var file = new FileWriter(recordFieldDetailsPath)
+              file.write(recordFieldDetailsJson.toString)
+              file.flush()
+              file.close() // file created with only dummy
 
-            val fieldDetails = getFieldsDetails(module)
-            recordFieldDetailsJson = Initializer.getJSON(recordFieldDetailsPath)
-            recordFieldDetailsJson.put(module.toLowerCase, fieldDetails)
-            file = new FileWriter(recordFieldDetailsPath)
-            file.flush()
-            file.write(recordFieldDetailsJson.toString)
-            file.flush()
-            file.close()
-          }
+              val fieldDetails = getFieldsDetails(moduleData.getString(Constants.API_NAME))
+              recordFieldDetailsJson = Initializer.getJSON(recordFieldDetailsPath)
+              recordFieldDetailsJson.put(module.toLowerCase, fieldDetails)
+              file = new FileWriter(recordFieldDetailsPath)
+              file.flush()
+              file.write(recordFieldDetailsJson.toString)
+              file.flush()
+              file.close()
+            }
+          })
         }
 
         newFile = false
@@ -155,7 +237,7 @@ object  Utility {
       }
     } catch {
       case e@(_: IOException | _:  JSONException | _: SDKException) =>
-        if (recordFieldDetailsPath==null && new File(recordFieldDetailsPath).exists) {
+        if (recordFieldDetailsPath != null && new File(recordFieldDetailsPath).exists) {
           try {
             val recordFieldDetailsJson = Initializer.getJSON(recordFieldDetailsPath)
             if (recordFieldDetailsJson.has(moduleAPIName.toLowerCase)) recordFieldDetailsJson.remove(moduleAPIName.toLowerCase)
@@ -166,7 +248,7 @@ object  Utility {
             if (getModifiedModules || forceRefresh) {
               getModifiedModules = false
               forceRefresh = false
-              if (lastModifiedTime==null) recordFieldDetailsJson.put(Constants.FIELDS_LAST_MODIFIED_TIME, lastModifiedTime)
+              if (lastModifiedTime != null) recordFieldDetailsJson.put(Constants.FIELDS_LAST_MODIFIED_TIME, lastModifiedTime)
             }
             val file = new FileWriter(recordFieldDetailsPath)
             file.flush()
@@ -195,7 +277,7 @@ object  Utility {
   @throws[IOException]
   @throws[SDKException]
   private def modifyFields(recordFieldDetailsPath: String, modifiedTime: String): Unit = {
-    val modifiedModules:mutable.HashMap[String,String] = getModules(modifiedTime)
+    val modifiedModules:JSONObject = getModules(modifiedTime)
     val recordFieldDetailsJson = Initializer.getJSON(recordFieldDetailsPath)
     recordFieldDetailsJson.put(Constants.FIELDS_LAST_MODIFIED_TIME, String.valueOf(System.currentTimeMillis))
     var file = new FileWriter(recordFieldDetailsPath)
@@ -203,18 +285,19 @@ object  Utility {
     file.write(recordFieldDetailsJson.toString)
     file.flush()
     file.close()
-    if (modifiedModules.nonEmpty) {
-      for ( module <- modifiedModules.keySet ) {
-        if (recordFieldDetailsJson.has(module)) deleteFields(recordFieldDetailsJson, module)
-      }
+    if (modifiedModules.length() > 0) {
+      modifiedModules.keySet().forEach(module => {
+        if (recordFieldDetailsJson.has(module.toLowerCase)) deleteFields(recordFieldDetailsJson, module.toLowerCase)
+      })
       file = new FileWriter(recordFieldDetailsPath)
       file.flush()
       file.write(recordFieldDetailsJson.toString)
       file.flush()
       file.close()
-      for ( module <- modifiedModules.keySet ) {
-        getFieldsInfo(module)
-      }
+      modifiedModules.keySet().forEach(module => {
+        val moduleData = modifiedModules.getJSONObject(module)
+        getFieldsInfo(moduleData.getString(Constants.API_NAME), null)
+      })
     }
   }
 
@@ -222,7 +305,7 @@ object  Utility {
     val subformModules = new ArrayBuffer[String]
     val fieldsJSON = recordFieldDetailsJson.getJSONObject(module.toLowerCase)
     fieldsJSON.keySet.forEach((key: String) => {
-      def foo(key: String) = if (fieldsJSON.getJSONObject(key).has(Constants.SUBFORM) && fieldsJSON.getJSONObject(key).getBoolean(Constants.SUBFORM)) subformModules.addOne(fieldsJSON.getJSONObject(key).getString(Constants.MODULE))
+      def foo(key: String) = if (fieldsJSON.getJSONObject(key).has(Constants.SUBFORM) && fieldsJSON.getJSONObject(key).getBoolean(Constants.SUBFORM) && recordFieldDetailsJson.has(fieldsJSON.getJSONObject(key).getString(Constants.MODULE))) subformModules.addOne(fieldsJSON.getJSONObject(key).getString(Constants.MODULE))
 
       foo(key)
     })
@@ -235,8 +318,8 @@ object  Utility {
   }
 
   @throws[UnsupportedEncodingException]
-  private def getFileName = {
-    val converterInstance =new Converter() {
+  private def getFileName: String = {
+    val converterInstance = new Converter() {
 
       override def getResponse(response: Any, pack: String): Any = None
 
@@ -250,8 +333,9 @@ object  Utility {
   }
 
   @throws[SDKException]
-  def getRelatedLists(relatedModuleName: String, moduleAPIName: String, commonAPIHandler: CommonAPIHandler): Unit =synchronized {
+  def getRelatedLists(relatedModuleName: String, moduleName: String, commonAPIHandler: CommonAPIHandler): Unit =synchronized {
     try {
+      var moduleAPIName: String = moduleName
       var isNewData = false
       val key = (moduleAPIName + Constants.UNDERSCORE + Constants.RELATED_LISTS).toLowerCase
       val resourcesPath = new File(Initializer.getInitializer.getResourcePath + File.separator + Constants.FIELD_DETAILS_DIRECTORY)
@@ -260,6 +344,7 @@ object  Utility {
       val recordFieldDetails = new File(recordFieldDetailsPath)
       if (!recordFieldDetails.exists || (recordFieldDetails.exists && Initializer.getJSON(recordFieldDetailsPath).optJSONArray(key) == null)) {
         isNewData = true
+        moduleAPIName = verifyModuleAPIName(moduleAPIName)
         val relatedListValues = getRelatedListDetails(moduleAPIName)
         val recordFieldDetailsJSON = if (recordFieldDetails.exists) Initializer.getJSON(recordFieldDetailsPath)
         else new JSONObject
@@ -290,17 +375,16 @@ object  Utility {
     }
   }
 
-
   @throws[JSONException]
   @throws[SDKException]
-    private def checkRelatedListExists(relatedModuleName: String, modulerelatedListJA: JSONArray, commonAPIHandler: CommonAPIHandler): Boolean = {
+  private def checkRelatedListExists(relatedModuleName: String, modulerelatedListJA: JSONArray, commonAPIHandler: CommonAPIHandler): Boolean = {
     for ( index <- 0 until modulerelatedListJA.length ) {
       val relatedListJO = modulerelatedListJA.getJSONObject(index)
       if (relatedListJO.getString(Constants.API_NAME) != null && relatedListJO.getString(Constants.API_NAME).equalsIgnoreCase(relatedModuleName)) {
         if (relatedListJO.getString(Constants.HREF) == Constants.NULL_VALUE) throw new SDKException(Constants.UNSUPPORTED_IN_API, commonAPIHandler.getHttpMethod + " " + commonAPIHandler.getAPIPath + Constants.UNSUPPORTED_IN_API_MESSAGE)
         if (!relatedListJO.getString(Constants.MODULE).equalsIgnoreCase(Constants.NULL_VALUE)) {
           commonAPIHandler.setModuleAPIName(relatedListJO.getString(Constants.MODULE))
-          getFieldsInfo(relatedListJO.getString(Constants.MODULE))
+          getFieldsInfo(relatedListJO.getString(Constants.MODULE), commonAPIHandler)
         }
         return true
       }
@@ -420,7 +504,7 @@ object  Utility {
 
   def searchJSONDetails(key: String): Option[JSONObject] = {
     val key1 = Constants.PACKAGE_NAMESPACE + ".record." + key
-    val iter = JSONDETAILS.keySet.iterator
+    val iter = Initializer.jsonDetails.keySet.iterator
     while ( {
       iter.hasNext
     }) {
@@ -435,17 +519,88 @@ object  Utility {
     None
   }
 
+  def verifyPhotoSupport(moduleName: String): Boolean = synchronized {
+    try {
+        val moduleAPIName = verifyModuleAPIName(moduleName)
 
-  @throws[SDKException]
-  def getModules(): Unit = synchronized{
-    apiSupportedModule = getModules(null)
+        if(Constants.PHOTO_SUPPORTED_MODULES.contains(moduleAPIName.toLowerCase)) return true
+
+        var modules: JSONObject = getModuleNames()
+
+        if(modules.optJSONObject(moduleAPIName.toLowerCase()) != null) {
+          var moduleMetaData = modules.getJSONObject(moduleAPIName.toLowerCase)
+
+          if(moduleMetaData.has(Constants.GENERATED_TYPE) && !moduleMetaData.getString(Constants.GENERATED_TYPE).equals(Constants.GENERATED_TYPE_CUSTOM)) {
+            throw new SDKException(Constants.UPLOAD_PHOTO_UNSUPPORTED_ERROR, Constants.UPLOAD_PHOTO_UNSUPPORTED_MESSAGE + moduleAPIName)
+          }
+        }
+      }
+      catch {
+        case e: SDKException =>
+          throw e
+        case e: Exception =>
+          val exception = new SDKException(Constants.EXCEPTION, e)
+
+          throw exception
+      }
+
+      return true
+  }
+
+  private def getModuleNames():  JSONObject = {
+    var moduleData = new JSONObject()
+
+    var resourcesPath = new File(Initializer.getInitializer.getResourcePath + File.separator + Constants.FIELD_DETAILS_DIRECTORY)
+
+    if (!resourcesPath.exists) resourcesPath.mkdirs
+
+    var recordFieldDetailsPath: String = getFileName
+
+    var recordFieldDetails = new File(recordFieldDetailsPath)
+
+    if(!recordFieldDetails.exists || (recordFieldDetails.exists && (Initializer.getJSON(recordFieldDetailsPath).optJSONObject(Constants.SDK_MODULE_METADATA) == null || Initializer.getJSON(recordFieldDetailsPath).optJSONObject(Constants.SDK_MODULE_METADATA).length == 0))) {
+      moduleData = getModules(null)
+
+      writeModuleMetaData(recordFieldDetailsPath, moduleData)
+
+      return moduleData
+    }
+
+    var recordFieldDetailsJson: JSONObject = Initializer.getJSON(recordFieldDetailsPath)
+
+    moduleData = recordFieldDetailsJson.getJSONObject(Constants.SDK_MODULE_METADATA)
+
+    return moduleData
+  }
+
+  private def writeModuleMetaData(recordFieldDetailsPath: String, moduleData: JSONObject) {
+    val moduleDataJSON = new JSONObject()
+
+    moduleData.keySet().forEach(key => {
+      moduleDataJSON.put(key, moduleData.get(key))
+    })
+
+    val recordFieldDetails = new File(recordFieldDetailsPath)
+
+    val fieldDetailsJSON = if (recordFieldDetails.exists()) Initializer.getJSON(recordFieldDetailsPath)
+    else new JSONObject()
+
+    fieldDetailsJSON.put(Constants.SDK_MODULE_METADATA, moduleDataJSON)
+
+    val file = new FileWriter(recordFieldDetailsPath)
+
+    file.write(fieldDetailsJSON.toString)
+
+    file.flush()
+
+    file.close()
   }
 
   @throws[SDKException]
-  private def getModules(header: String):mutable.HashMap[String,String] = {
-    val apiNames = new mutable.HashMap[String,String]()
+  private def getModules(header: String): JSONObject = {
+    val apiNames = new JSONObject()
     val headerHashMap = new HeaderMap
-    if (header!=null) {
+    if (header != null) {
       val headerValue = OffsetDateTime.ofInstant(Instant.ofEpochMilli(header.toLong), ZoneId.systemDefault).withNano(0)
       headerHashMap.add(new GetModulesHeader().IfModifiedSince, headerValue)
     }
@@ -460,7 +615,15 @@ object  Utility {
           case wrapper: modules.ResponseWrapper =>
             val modules = wrapper.getModules()
             for ( module <- modules ) {
-              if (module.getAPISupported().get) apiNames.put(module.getAPIName().get.toLowerCase(), module.getGeneratedType().getValue)
+              if (module.getAPISupported().get) {
+                var moduleDetails = new JSONObject()
+
+                moduleDetails.put(Constants.API_NAME, module.getAPIName().get)
+
+                moduleDetails.put(Constants.GENERATED_TYPE, module.getGeneratedType().getValue)
+
+                apiNames.put(module.getAPIName().get.toLowerCase(), moduleDetails)
+              }
             }
           case _ => responseObject match {
             case exception: modules.APIException =>
@@ -474,13 +637,26 @@ object  Utility {
         }
       }
     }
+
+    if(header == null) {
+      try {
+        var  resourcesPath = new File(Initializer.getInitializer.getResourcePath + File.separator + Constants.FIELD_DETAILS_DIRECTORY)
+        if (!resourcesPath.exists()) resourcesPath.mkdirs
+
+        writeModuleMetaData(getFileName, apiNames)
+      } catch {
+        case ex: IOException =>
+          throw new SDKException(Constants.EXCEPTION, ex)
+      }
+    }
+
     apiNames
   }
 
   @throws[SDKException]
   def refreshModules(): Unit = {
     forceRefresh = true
-    getFieldsInfo("")
+    getFieldsInfo(null, null)
     forceRefresh = false
   }
 
@@ -492,16 +668,15 @@ object  Utility {
       val keyInJSON = iter.next
       if (keyInJSON.equalsIgnoreCase(key)) return Option(json.getJSONObject(keyInJSON))
     }
-     None
+    None
   }
 
-  private def setDataType(fieldDetail: JSONObject, field: Field, moduleAPIName:String): Unit = {
+  private def setDataType(fieldDetail: JSONObject, field: Field, moduleAPIName: String): Unit = {
     val apiType = field.getDataType().orNull
     val keyName = field.getAPIName().orNull
     var module = ""
 
-
-    if (field.getSystemMandatory().isDefined &&  field.getSystemMandatory().get.isInstanceOf[Boolean] && field.getSystemMandatory().get && !(moduleAPIName.equalsIgnoreCase(Constants.CALLS) && keyName.equalsIgnoreCase(Constants.CALL_DURATION))) fieldDetail.put(Constants.REQUIRED, true)
+    if (field.getSystemMandatory().isDefined && (field.getSystemMandatory().get.isInstanceOf[Boolean] && field.getSystemMandatory().get) && !(moduleAPIName.equalsIgnoreCase(Constants.CALLS) && keyName.equalsIgnoreCase(Constants.CALL_DURATION))) fieldDetail.put(Constants.REQUIRED, true)
 
     if (keyName.equalsIgnoreCase(Constants.PRODUCT_DETAILS) && Constants.INVENTORY_MODULES.contains(moduleAPIName.toLowerCase)) {
       fieldDetail.put(Constants.NAME, keyName)
@@ -538,14 +713,13 @@ object  Utility {
       fieldDetail.put(Constants.LOOKUP, true)
       return
     }
-    else if (apiTypeVsdataType.keySet.contains(apiType)){
-
-      fieldDetail.put(Constants.TYPE, apiTypeVsdataType(apiType))
+    else if (apiTypeVsDataType.keySet.contains(apiType)){
+      fieldDetail.put(Constants.TYPE, apiTypeVsDataType(apiType))
     }
     else if (apiType.equalsIgnoreCase(Constants.FORMULA)) {
       if (field.getFormula().isDefined) {
         val returnType = field.getFormula().get.getReturnType().orNull
-        val apiDataType = apiTypeVsdataType.get(returnType) match {
+        val apiDataType = apiTypeVsDataType.get(returnType) match {
           case Some(value) =>value
           case _ =>null
         }
@@ -554,6 +728,7 @@ object  Utility {
       fieldDetail.put(Constants.READ_ONLY, true)
     }
     else return
+    
     if (apiType.toLowerCase.contains(Constants.LOOKUP)) fieldDetail.put(Constants.LOOKUP, true)
 
     if (apiType.toLowerCase.equalsIgnoreCase(Constants.CONSENT_LOOKUP)) fieldDetail.put(Constants.SKIP_MANDATORY, true)
@@ -561,6 +736,7 @@ object  Utility {
     if (apiTypeVsStructureName.contains(apiType)) fieldDetail.put(Constants.STRUCTURE_NAME, apiTypeVsStructureName(apiType))
 
     if (field.getDataType().isDefined && field.getDataType().get.equalsIgnoreCase(Constants.PICKLIST) && (field.getPickListValues != null && field.getPickListValues().nonEmpty)) {
+      fieldDetail.put(Constants.PICKLIST, true)
       val values = new JSONArray()
       for(plv <-field.getPickListValues() ){
         values.put(plv.getActualValue().get)
@@ -585,12 +761,12 @@ object  Utility {
       else module = ""
       fieldDetail.put(Constants.LOOKUP, true)
     }
-    if (module.length > 0) getFieldsInfo(module)
+    if (module.length > 0) getFieldsInfo(module, null)
     fieldDetail.put(Constants.NAME, keyName)
   }
 
   private def fillDatatype(): Unit = {
-    if (apiTypeVsdataType.nonEmpty) return
+    if (apiTypeVsDataType.nonEmpty) return
     val fieldAPINamesString = Array[String]("textarea", "text", "website", "email", "phone", "mediumtext", "multiselectlookup", "profileimage","autonumber") // No I18N
     val fieldAPINamesInteger = Array[String]("integer")
     val fieldAPINamesBoolean = Array[String]("boolean")
@@ -616,93 +792,93 @@ object  Utility {
 
     val fieldAPINameConsentLookUp = Array[String]("consent_lookup")
     for ( fieldAPIName <- fieldAPINamesString ) {
-      apiTypeVsdataType.put(fieldAPIName, Constants.STRING_NAMESPACE)
+      apiTypeVsDataType.put(fieldAPIName, Constants.STRING_NAMESPACE)
     }
 
     for ( fieldAPIName <- fieldAPINamesInteger ) {
-      apiTypeVsdataType.put(fieldAPIName, Constants.INTEGER_NAMESPACE)
+      apiTypeVsDataType.put(fieldAPIName, Constants.INTEGER_NAMESPACE)
     }
 
     for ( fieldAPIName <- fieldAPINamesBoolean ) {
-      apiTypeVsdataType.put(fieldAPIName, Constants.BOOLEAN_NAMESPACE)
+      apiTypeVsDataType.put(fieldAPIName, Constants.BOOLEAN_NAMESPACE)
     }
 
     for ( fieldAPIName <- fieldAPINamesLong ) {
-      apiTypeVsdataType.put(fieldAPIName, Constants.LONG_NAMESPACE)
+      apiTypeVsDataType.put(fieldAPIName, Constants.LONG_NAMESPACE)
     }
 
     for ( fieldAPIName <- fieldAPINamesDouble ) {
-      apiTypeVsdataType.put(fieldAPIName, Constants.DOUBLE_NAMESPACE)
+      apiTypeVsDataType.put(fieldAPIName, Constants.DOUBLE_NAMESPACE)
     }
 
     for ( fieldAPIName <- fieldAPINamesFile ) {
-      apiTypeVsdataType.put(fieldAPIName, Constants.FILE_NAMESPACE)
+      apiTypeVsDataType.put(fieldAPIName, Constants.FILE_NAMESPACE)
     }
 
     for ( fieldAPIName <- fieldAPINamesDateTime ) {
-      apiTypeVsdataType.put(fieldAPIName, Constants.DATETIME_NAMESPACE)
+      apiTypeVsDataType.put(fieldAPIName, Constants.DATETIME_NAMESPACE)
     }
 
     for ( fieldAPIName <- fieldAPINamesDate ) {
-      apiTypeVsdataType.put(fieldAPIName, Constants.DATE_NAMESPACE)
+      apiTypeVsDataType.put(fieldAPIName, Constants.DATE_NAMESPACE)
     }
 
     for ( fieldAPIName <- fieldAPINamesLookup ) {
-      apiTypeVsdataType.put(fieldAPIName, Constants.RECORD_NAMESPACE)
+      apiTypeVsDataType.put(fieldAPIName, Constants.RECORD_NAMESPACE)
       apiTypeVsStructureName.put(fieldAPIName, Constants.RECORD_NAMESPACE)
     }
 
     for ( fieldAPIName <- fieldAPINamesPickList ) {
-      apiTypeVsdataType.put(fieldAPIName, Constants.CHOICE_NAMESPACE)
+      apiTypeVsDataType.put(fieldAPIName, Constants.CHOICE_NAMESPACE)
     }
 
     for ( fieldAPIName <- fieldAPINamesMultiSelectPickList ) {
-      apiTypeVsdataType.put(fieldAPIName, Constants.LIST_NAMESPACE)
+      apiTypeVsDataType.put(fieldAPIName, Constants.LIST_NAMESPACE)
       apiTypeVsStructureName.put(fieldAPIName, Constants.CHOICE_NAMESPACE)
     }
 
     for ( fieldAPIName <- fieldAPINamesSubForm ) {
-      apiTypeVsdataType.put(fieldAPIName, Constants.LIST_NAMESPACE)
+      apiTypeVsDataType.put(fieldAPIName, Constants.LIST_NAMESPACE)
       apiTypeVsStructureName.put(fieldAPIName, Constants.RECORD_NAMESPACE)
     }
 
     for ( fieldAPIName <- fieldAPINamesOwnerLookUp ) {
-      apiTypeVsdataType.put(fieldAPIName, Constants.USER_NAMESPACE)
+      apiTypeVsDataType.put(fieldAPIName, Constants.USER_NAMESPACE)
       apiTypeVsStructureName.put(fieldAPIName, Constants.USER_NAMESPACE)
     }
 
     for ( fieldAPIName <- fieldAPINamesMultiUserLookUp ) {
-      apiTypeVsdataType.put(fieldAPIName, Constants.LIST_NAMESPACE)
+      apiTypeVsDataType.put(fieldAPIName, Constants.LIST_NAMESPACE)
       apiTypeVsStructureName.put(fieldAPIName, Constants.USER_NAMESPACE)
     }
 
     for ( fieldAPIName <- fieldAPINamesMultiModuleLookUp ) {
-      apiTypeVsdataType.put(fieldAPIName, Constants.LIST_NAMESPACE)
+      apiTypeVsDataType.put(fieldAPIName, Constants.LIST_NAMESPACE)
       apiTypeVsStructureName.put(fieldAPIName, Constants.MODULE_NAMESPACE)
     }
 
     for ( fieldAPIName <- fieldAPINamesFieldFile ) {
-      apiTypeVsdataType.put(fieldAPIName, Constants.LIST_NAMESPACE)
+      apiTypeVsDataType.put(fieldAPIName, Constants.LIST_NAMESPACE)
       apiTypeVsStructureName.put(fieldAPIName, Constants.FIELD_FILE_NAMESPACE)
     }
 
     for ( fieldAPIName <- fieldAPINameTaskRemindAt ) {
-      apiTypeVsdataType.put(fieldAPIName, Constants.REMINDAT_NAMESPACE)
+      apiTypeVsDataType.put(fieldAPIName, Constants.REMINDAT_NAMESPACE)
       apiTypeVsStructureName.put(fieldAPIName, Constants.REMINDAT_NAMESPACE)
     }
 
     for ( fieldAPIName <- fieldAPINameRecurringActivity ) {
-      apiTypeVsdataType.put(fieldAPIName, Constants.RECURRING_ACTIVITY_NAMESPACE)
+      apiTypeVsDataType.put(fieldAPIName, Constants.RECURRING_ACTIVITY_NAMESPACE)
       apiTypeVsStructureName.put(fieldAPIName, Constants.RECURRING_ACTIVITY_NAMESPACE)
     }
 
     for ( fieldAPIName <- fieldAPINameReminder ) {
-      apiTypeVsdataType.put(fieldAPIName, Constants.LIST_NAMESPACE)
+      apiTypeVsDataType.put(fieldAPIName, Constants.LIST_NAMESPACE)
       apiTypeVsStructureName.put(fieldAPIName, Constants.REMINDER_NAMESPACE)
     }
 
     for ( fieldAPIName <- fieldAPINameConsentLookUp ) {
-      apiTypeVsdataType.put(fieldAPIName, Constants.CONSENT_NAMESPACE)
+      apiTypeVsDataType.put(fieldAPIName, Constants.CONSENT_NAMESPACE)
       apiTypeVsStructureName.put(fieldAPIName, Constants.CONSENT_NAMESPACE)
     }
   }

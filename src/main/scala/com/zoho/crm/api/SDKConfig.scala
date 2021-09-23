@@ -21,7 +21,7 @@ object SDKConfig {
      * @param autoRefreshFields A boolean
      * @return An instance of Builder
      */
-    def setAutoRefreshFields(autoRefreshFields: Boolean): SDKConfig.Builder = {
+    def autoRefreshFields(autoRefreshFields: Boolean): SDKConfig.Builder = {
       this.autoRefreshFields = autoRefreshFields
       this
     }
@@ -32,7 +32,7 @@ object SDKConfig {
      * @param pickListValidation A boolean
      * @return An instance of Builder
      */
-    def setPickListValidation(pickListValidation: Boolean): SDKConfig.Builder = {
+    def pickListValidation(pickListValidation: Boolean): SDKConfig.Builder = {
       this.pickListValidation = pickListValidation
       this
     }

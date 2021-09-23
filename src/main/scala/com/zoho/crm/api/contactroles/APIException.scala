@@ -4,7 +4,7 @@ import com.zoho.crm.api.util.Choice
 import com.zoho.crm.api.util.Model
 import scala.collection.mutable.HashMap
 
-class APIException extends Model with ResponseHandler with ActionResponse with ActionHandler	{
+class APIException extends Model with ResponseHandler with ActionResponse with ActionHandler with RecordResponseHandler with RecordActionHandler	{
 	private var status:Choice[String] = _
 	private var code:Choice[String] = _
 	private var message:Choice[String] = _

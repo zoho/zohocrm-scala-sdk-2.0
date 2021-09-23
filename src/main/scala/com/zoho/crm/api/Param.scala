@@ -5,14 +5,14 @@ package com.zoho.crm.api
  * @tparam A Any datatype
  */
 class Param[A] {
-  var name:String = _
-  var className : String =_
+  var name: String = _
+  var className : String = _
 
   /**
    * Creates an Param class instance with the specified parameter name.
    * @param name A String containing the parameter name.
    */
-  def this(name:String, className:String=null) ={
+  def this(name: String, className: String = null) = {
     this()
 
     this.name = name

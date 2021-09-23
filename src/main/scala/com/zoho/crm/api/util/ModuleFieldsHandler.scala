@@ -11,17 +11,14 @@ import org.json.JSONObject
 import java.io.FileWriter
 
 import com.zoho.crm.api.Initializer
+
 object ModuleFieldsHandler {
-
-
   private val LOGGER: Logger = Logger.getLogger(classOf[SDKLogger].getName)
-
 
   private def getDirectory = Initializer.getInitializer.getResourcePath + File.separator + Constants.FIELD_DETAILS_DIRECTORY
 
-
   @throws[SDKException]
-  def deleteFieldsFile(): Unit = synchronized{
+  def deleteFieldsFile(): Unit = synchronized {
     try {
       val converterInstance = new Converter() {
         /**
@@ -73,17 +70,15 @@ object ModuleFieldsHandler {
         LOGGER.log(Level.SEVERE, Constants.DELETE_FIELD_FILE_ERROR, exception)
         throw exception
     }
-
   }
 
-
   @throws[SDKException]
-  def deleteAllFieldFiles(): Unit = synchronized{
+  def deleteAllFieldFiles(): Unit = synchronized {
     try {
       val recordFieldDetailsDirectory = new File(getDirectory)
       if (recordFieldDetailsDirectory.exists) {
         val files = recordFieldDetailsDirectory.listFiles
-        if (files != null) for ( file <- files ) {
+        if (files != null) for (file <- files) {
           if (file.getName.endsWith(Constants.JSON_FILE_EXTENSION)) file.delete
         }
       }
@@ -95,10 +90,8 @@ object ModuleFieldsHandler {
     }
   }
 
-
-
   @throws[SDKException]
-   def deleteFields(module: String): Unit = {
+  def deleteFields(module: String): Unit = {
     try {
       val converterInstance = new Converter() {
         /**
@@ -168,10 +161,10 @@ object ModuleFieldsHandler {
    * @throws SDKException Exception
    */
   @throws[SDKException]
-  def refreshFields(module: String): Unit = synchronized{
+  def refreshFields(module: String): Unit = synchronized {
     try {
       deleteFields(module)
-      Utility.getFields(module)
+      Utility.getFields(module, null)
     } catch {
       case e: SDKException =>
         LOGGER.log(Level.SEVERE, Constants.REFRESH_SINGLE_MODULE_FIELDS_ERROR.concat(module), e)
