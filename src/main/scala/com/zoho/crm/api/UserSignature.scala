@@ -6,10 +6,9 @@ import _root_.org.json.JSONObject
 import com.zoho.crm.api.exception.SDKException
 import com.zoho.crm.api.util.Constants
 
-
 /**
  * This class represents the Zoho CRM User.
- */
+*/
 
 /**
  * Creates an UserSignature class instance with the specified user email.

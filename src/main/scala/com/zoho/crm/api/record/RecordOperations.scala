@@ -24,8 +24,8 @@ class RecordOperations	{
 		handlerInstance.setCategoryMethod("READ")
 		handlerInstance.setParam(paramInstance)
 		handlerInstance.setHeader(headerInstance)
-		Utility.getFields(moduleAPIName)
 		handlerInstance.setModuleAPIName(moduleAPIName)
+		Utility.getFields(moduleAPIName, handlerInstance)
 		return handlerInstance.apiCall(classOf[ResponseHandler], "application/json")
 	}
 
@@ -42,8 +42,8 @@ class RecordOperations	{
 		handlerInstance.setContentType("application/json")
 		handlerInstance.setRequest(request)
 		handlerInstance.setHeader(headerInstance)
-		Utility.getFields(moduleAPIName)
 		handlerInstance.setModuleAPIName(moduleAPIName)
+		Utility.getFields(moduleAPIName, handlerInstance)
 		return handlerInstance.apiCall(classOf[ActionHandler], "application/json")
 	}
 
@@ -59,6 +59,7 @@ class RecordOperations	{
 		handlerInstance.setCategoryMethod(Constants.REQUEST_METHOD_DELETE)
 		handlerInstance.setParam(paramInstance)
 		handlerInstance.setHeader(headerInstance)
+		Utility.getFields(moduleAPIName, handlerInstance)
 		return handlerInstance.apiCall(classOf[ActionHandler], "application/json")
 	}
 
@@ -72,12 +73,12 @@ class RecordOperations	{
 		handlerInstance.setCategoryMethod("READ")
 		handlerInstance.setParam(paramInstance)
 		handlerInstance.setHeader(headerInstance)
-		Utility.getFields(moduleAPIName)
 		handlerInstance.setModuleAPIName(moduleAPIName)
+		Utility.getFields(moduleAPIName, handlerInstance)
 		return handlerInstance.apiCall(classOf[ResponseHandler], "application/json")
 	}
 
-	def createRecords( moduleAPIName: String,  request: BodyWrapper) :Option[APIResponse[ActionHandler]]	={
+	def createRecords( moduleAPIName: String,  request: BodyWrapper,  headerInstance: Option[HeaderMap]=None) :Option[APIResponse[ActionHandler]]	={
 		var handlerInstance :CommonAPIHandler = new CommonAPIHandler()
 		var apiPath :String = new String()
 		apiPath = apiPath.concat("/crm/v2/")
@@ -87,9 +88,9 @@ class RecordOperations	{
 		handlerInstance.setCategoryMethod("CREATE")
 		handlerInstance.setContentType("application/json")
 		handlerInstance.setRequest(request)
-		handlerInstance.setMandatoryChecker(true)
-		Utility.getFields(moduleAPIName)
+		handlerInstance.setHeader(headerInstance)
 		handlerInstance.setModuleAPIName(moduleAPIName)
+		Utility.getFields(moduleAPIName, handlerInstance)
 		return handlerInstance.apiCall(classOf[ActionHandler], "application/json")
 	}
 
@@ -103,10 +104,9 @@ class RecordOperations	{
 		handlerInstance.setCategoryMethod("UPDATE")
 		handlerInstance.setContentType("application/json")
 		handlerInstance.setRequest(request)
-		handlerInstance.setMandatoryChecker(true)
 		handlerInstance.setHeader(headerInstance)
-		Utility.getFields(moduleAPIName)
 		handlerInstance.setModuleAPIName(moduleAPIName)
+		Utility.getFields(moduleAPIName, handlerInstance)
 		return handlerInstance.apiCall(classOf[ActionHandler], "application/json")
 	}
 
@@ -120,6 +120,7 @@ class RecordOperations	{
 		handlerInstance.setCategoryMethod(Constants.REQUEST_METHOD_DELETE)
 		handlerInstance.setParam(paramInstance)
 		handlerInstance.setHeader(headerInstance)
+		Utility.getFields(moduleAPIName, handlerInstance)
 		return handlerInstance.apiCall(classOf[ActionHandler], "application/json")
 	}
 
@@ -135,8 +136,8 @@ class RecordOperations	{
 		handlerInstance.setContentType("application/json")
 		handlerInstance.setRequest(request)
 		handlerInstance.setHeader(headerInstance)
-		Utility.getFields(moduleAPIName)
 		handlerInstance.setModuleAPIName(moduleAPIName)
+		Utility.getFields(moduleAPIName, handlerInstance)
 		return handlerInstance.apiCall(classOf[ActionHandler], "application/json")
 	}
 
@@ -151,6 +152,7 @@ class RecordOperations	{
 		handlerInstance.setCategoryMethod("READ")
 		handlerInstance.setParam(paramInstance)
 		handlerInstance.setHeader(headerInstance)
+		Utility.getFields(moduleAPIName, handlerInstance)
 		return handlerInstance.apiCall(classOf[DeletedRecordsHandler], "application/json")
 	}
 
@@ -165,8 +167,8 @@ class RecordOperations	{
 		handlerInstance.setCategoryMethod("READ")
 		handlerInstance.setParam(paramInstance)
 		handlerInstance.setHeader(headerInstance)
-		Utility.getFields(moduleAPIName)
 		handlerInstance.setModuleAPIName(moduleAPIName)
+		Utility.getFields(moduleAPIName, handlerInstance)
 		return handlerInstance.apiCall(classOf[ResponseHandler], "application/json")
 	}
 
@@ -182,7 +184,7 @@ class RecordOperations	{
 		handlerInstance.setContentType("application/json")
 		handlerInstance.setRequest(request)
 		handlerInstance.setMandatoryChecker(true)
-		Utility.getFields("Deals")
+		Utility.getFields("Deals", handlerInstance)
 		return handlerInstance.apiCall(classOf[ConvertActionHandler], "application/json")
 	}
 
@@ -197,6 +199,7 @@ class RecordOperations	{
 		handlerInstance.setAPIPath(apiPath)
 		handlerInstance.setHttpMethod(Constants.REQUEST_METHOD_GET)
 		handlerInstance.setCategoryMethod("READ")
+		Utility.getFields(moduleAPIName, handlerInstance)
 		return handlerInstance.apiCall(classOf[DownloadHandler], "application/x-download")
 	}
 
@@ -214,6 +217,7 @@ class RecordOperations	{
 		handlerInstance.setContentType("multipart/form-data")
 		handlerInstance.setRequest(request)
 		handlerInstance.setMandatoryChecker(true)
+		Utility.getFields(moduleAPIName, handlerInstance)
 		Utility.verifyPhotoSupport(moduleAPIName)
 		return handlerInstance.apiCall(classOf[FileHandler], "application/json")
 	}
@@ -229,6 +233,7 @@ class RecordOperations	{
 		handlerInstance.setAPIPath(apiPath)
 		handlerInstance.setHttpMethod(Constants.REQUEST_METHOD_DELETE)
 		handlerInstance.setCategoryMethod(Constants.REQUEST_METHOD_DELETE)
+		Utility.getFields(moduleAPIName, handlerInstance)
 		return handlerInstance.apiCall(classOf[FileHandler], "application/json")
 	}
 
@@ -244,8 +249,8 @@ class RecordOperations	{
 		handlerInstance.setContentType("application/json")
 		handlerInstance.setRequest(request)
 		handlerInstance.setMandatoryChecker(true)
-		Utility.getFields(moduleAPIName)
 		handlerInstance.setModuleAPIName(moduleAPIName)
+		Utility.getFields(moduleAPIName, handlerInstance)
 		return handlerInstance.apiCall(classOf[MassUpdateActionHandler], "application/json")
 	}
 
@@ -259,7 +264,59 @@ class RecordOperations	{
 		handlerInstance.setHttpMethod(Constants.REQUEST_METHOD_GET)
 		handlerInstance.setCategoryMethod("READ")
 		handlerInstance.setParam(paramInstance)
+		Utility.getFields(moduleAPIName, handlerInstance)
 		return handlerInstance.apiCall(classOf[MassUpdateResponseHandler], "application/json")
+	}
+
+	def getRecordUsingExternalId( externalFieldValue: String,  moduleAPIName: String,  paramInstance: Option[ParameterMap]=None,  headerInstance: Option[HeaderMap]=None) :Option[APIResponse[ResponseHandler]]	={
+		var handlerInstance :CommonAPIHandler = new CommonAPIHandler()
+		var apiPath :String = new String()
+		apiPath = apiPath.concat("/crm/v2/")
+		apiPath = apiPath.concat(moduleAPIName.toString())
+		apiPath = apiPath.concat("/")
+		apiPath = apiPath.concat(externalFieldValue.toString())
+		handlerInstance.setAPIPath(apiPath)
+		handlerInstance.setHttpMethod(Constants.REQUEST_METHOD_GET)
+		handlerInstance.setCategoryMethod("READ")
+		handlerInstance.setParam(paramInstance)
+		handlerInstance.setHeader(headerInstance)
+		handlerInstance.setModuleAPIName(moduleAPIName)
+		Utility.getFields(moduleAPIName, handlerInstance)
+		return handlerInstance.apiCall(classOf[ResponseHandler], "application/json")
+	}
+
+	def updateRecordUsingExternalId( externalFieldValue: String,  moduleAPIName: String,  request: BodyWrapper,  headerInstance: Option[HeaderMap]=None) :Option[APIResponse[ActionHandler]]	={
+		var handlerInstance :CommonAPIHandler = new CommonAPIHandler()
+		var apiPath :String = new String()
+		apiPath = apiPath.concat("/crm/v2/")
+		apiPath = apiPath.concat(moduleAPIName.toString())
+		apiPath = apiPath.concat("/")
+		apiPath = apiPath.concat(externalFieldValue.toString())
+		handlerInstance.setAPIPath(apiPath)
+		handlerInstance.setHttpMethod(Constants.REQUEST_METHOD_PUT)
+		handlerInstance.setCategoryMethod("UPDATE")
+		handlerInstance.setContentType("application/json")
+		handlerInstance.setRequest(request)
+		handlerInstance.setHeader(headerInstance)
+		handlerInstance.setModuleAPIName(moduleAPIName)
+		Utility.getFields(moduleAPIName, handlerInstance)
+		return handlerInstance.apiCall(classOf[ActionHandler], "application/json")
+	}
+
+	def deleteRecordUsingExternalId( externalFieldValue: String,  moduleAPIName: String,  paramInstance: Option[ParameterMap]=None,  headerInstance: Option[HeaderMap]=None) :Option[APIResponse[ActionHandler]]	={
+		var handlerInstance :CommonAPIHandler = new CommonAPIHandler()
+		var apiPath :String = new String()
+		apiPath = apiPath.concat("/crm/v2/")
+		apiPath = apiPath.concat(moduleAPIName.toString())
+		apiPath = apiPath.concat("/")
+		apiPath = apiPath.concat(externalFieldValue.toString())
+		handlerInstance.setAPIPath(apiPath)
+		handlerInstance.setHttpMethod(Constants.REQUEST_METHOD_DELETE)
+		handlerInstance.setCategoryMethod(Constants.REQUEST_METHOD_DELETE)
+		handlerInstance.setParam(paramInstance)
+		handlerInstance.setHeader(headerInstance)
+		Utility.getFields(moduleAPIName, handlerInstance)
+		return handlerInstance.apiCall(classOf[ActionHandler], "application/json")
 	}}
  object RecordOperations{
 class GetRecordParam		{
@@ -287,7 +344,7 @@ class UpdateRecordHeader		{
 
 
 class DeleteRecordParam		{
-		final val wfTrigger:Param[String] = new Param[String]("wf_trigger", "com.zoho.crm.api.Record.DeleteRecordParam")
+		final val wfTrigger:Param[Boolean] = new Param[Boolean]("wf_trigger", "com.zoho.crm.api.Record.DeleteRecordParam")
 	}
 
 
@@ -300,7 +357,7 @@ class GetRecordsParam		{
 		final val approved:Param[String] = new Param[String]("approved", "com.zoho.crm.api.Record.GetRecordsParam")
 		final val converted:Param[String] = new Param[String]("converted", "com.zoho.crm.api.Record.GetRecordsParam")
 		final val cvid:Param[String] = new Param[String]("cvid", "com.zoho.crm.api.Record.GetRecordsParam")
-		final val ids:Param[Long] = new Param[Long]("ids", "com.zoho.crm.api.Record.GetRecordsParam")
+		final val ids:Param[String] = new Param[String]("ids", "com.zoho.crm.api.Record.GetRecordsParam")
 		final val uid:Param[String] = new Param[String]("uid", "com.zoho.crm.api.Record.GetRecordsParam")
 		final val fields:Param[String] = new Param[String]("fields", "com.zoho.crm.api.Record.GetRecordsParam")
 		final val sortBy:Param[String] = new Param[String]("sort_by", "com.zoho.crm.api.Record.GetRecordsParam")
@@ -320,14 +377,19 @@ class GetRecordsHeader		{
 	}
 
 
+class CreateRecordsHeader		{
+		final val XEXTERNAL:Header[String] = new Header[String]("X-EXTERNAL", "com.zoho.crm.api.Record.CreateRecordsHeader")
+	}
+
+
 class UpdateRecordsHeader		{
 		final val XEXTERNAL:Header[String] = new Header[String]("X-EXTERNAL", "com.zoho.crm.api.Record.UpdateRecordsHeader")
 	}
 
 
 class DeleteRecordsParam		{
-		final val ids:Param[Long] = new Param[Long]("ids", "com.zoho.crm.api.Record.DeleteRecordsParam")
-		final val wfTrigger:Param[String] = new Param[String]("wf_trigger", "com.zoho.crm.api.Record.DeleteRecordsParam")
+		final val ids:Param[String] = new Param[String]("ids", "com.zoho.crm.api.Record.DeleteRecordsParam")
+		final val wfTrigger:Param[Boolean] = new Param[Boolean]("wf_trigger", "com.zoho.crm.api.Record.DeleteRecordsParam")
 	}
 
 
@@ -362,6 +424,7 @@ class SearchRecordsParam		{
 		final val approved:Param[String] = new Param[String]("approved", "com.zoho.crm.api.Record.SearchRecordsParam")
 		final val page:Param[Int] = new Param[Int]("page", "com.zoho.crm.api.Record.SearchRecordsParam")
 		final val perPage:Param[Int] = new Param[Int]("per_page", "com.zoho.crm.api.Record.SearchRecordsParam")
+		final val fields:Param[String] = new Param[String]("fields", "com.zoho.crm.api.Record.SearchRecordsParam")
 	}
 
 
@@ -372,5 +435,39 @@ class SearchRecordsHeader		{
 
 class GetMassUpdateStatusParam		{
 		final val jobId:Param[String] = new Param[String]("job_id", "com.zoho.crm.api.Record.GetMassUpdateStatusParam")
+	}
+
+
+class GetRecordUsingExternalIDParam		{
+		final val approved:Param[String] = new Param[String]("approved", "com.zoho.crm.api.Record.GetRecordUsingExternalIDParam")
+		final val converted:Param[String] = new Param[String]("converted", "com.zoho.crm.api.Record.GetRecordUsingExternalIDParam")
+		final val cvid:Param[String] = new Param[String]("cvid", "com.zoho.crm.api.Record.GetRecordUsingExternalIDParam")
+		final val uid:Param[String] = new Param[String]("uid", "com.zoho.crm.api.Record.GetRecordUsingExternalIDParam")
+		final val fields:Param[String] = new Param[String]("fields", "com.zoho.crm.api.Record.GetRecordUsingExternalIDParam")
+		final val startDateTime:Param[OffsetDateTime] = new Param[OffsetDateTime]("startDateTime", "com.zoho.crm.api.Record.GetRecordUsingExternalIDParam")
+		final val endDateTime:Param[OffsetDateTime] = new Param[OffsetDateTime]("endDateTime", "com.zoho.crm.api.Record.GetRecordUsingExternalIDParam")
+		final val territoryId:Param[String] = new Param[String]("territory_id", "com.zoho.crm.api.Record.GetRecordUsingExternalIDParam")
+		final val includeChild:Param[String] = new Param[String]("include_child", "com.zoho.crm.api.Record.GetRecordUsingExternalIDParam")
+	}
+
+
+class GetRecordUsingExternalIDHeader		{
+		final val IfModifiedSince:Header[OffsetDateTime] = new Header[OffsetDateTime]("If-Modified-Since", "com.zoho.crm.api.Record.GetRecordUsingExternalIDHeader")
+		final val XEXTERNAL:Header[String] = new Header[String]("X-EXTERNAL", "com.zoho.crm.api.Record.GetRecordUsingExternalIDHeader")
+	}
+
+
+class UpdateRecordUsingExternalIDHeader		{
+		final val XEXTERNAL:Header[String] = new Header[String]("X-EXTERNAL", "com.zoho.crm.api.Record.UpdateRecordUsingExternalIDHeader")
+	}
+
+
+class DeleteRecordUsingExternalIDParam		{
+		final val wfTrigger:Param[Boolean] = new Param[Boolean]("wf_trigger", "com.zoho.crm.api.Record.DeleteRecordUsingExternalIDParam")
+	}
+
+
+class DeleteRecordUsingExternalIDHeader		{
+		final val XEXTERNAL:Header[String] = new Header[String]("X-EXTERNAL", "com.zoho.crm.api.Record.DeleteRecordUsingExternalIDHeader")
 	}
 }

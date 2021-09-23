@@ -5,7 +5,6 @@ import com.zoho.crm.api.UserSignature
 import java.io.{File, FileReader, FileWriter}
 
 import com.zoho.api.authenticator.OAuthToken
-import com.zoho.api.authenticator.OAuthToken.TokenType
 import com.zoho.crm.api.util.Constants
 import com.zoho.crm.api.exception.SDKException
 
@@ -14,22 +13,23 @@ import scala.io.Source
 
 /**
  * Creates a FileStore class instance with the specified parameters.
+ *
  * @param filePath A String containing the absolute file path to store tokens.
- * @throws Exception  Exception
+ * @throws Exception Exception
  */
-class FileStore(private var filePath :String) extends TokenStore {
+class FileStore(private var filePath: String) extends TokenStore {
 
-  val writer = new FileWriter(new File(filePath),true)
+  val writer = new FileWriter(new File(filePath), true)
 
-  var fileReader :FileReader = new FileReader(filePath)
+  var fileReader: FileReader = new FileReader(filePath)
 
-  var headerString :String = Constants.USER_MAIL + Constants.COMMA +
-    Constants.CLIENT_ID + Constants.COMMA + Constants.REFRESH_TOKEN + Constants.COMMA +
+  var headerString: String = Constants.ID + Constants.COMMA + Constants.USER_MAIL + Constants.COMMA +
+    Constants.CLIENT_ID + Constants.COMMA + Constants.CLIENT_SECRET + Constants.COMMA + Constants.REFRESH_TOKEN + Constants.COMMA +
     Constants.ACCESS_TOKEN + Constants.COMMA +
     Constants.GRANT_TOKEN + Constants.COMMA +
-    Constants.EXPIRY_TIME
+    Constants.EXPIRY_TIME + Constants.COMMA + Constants.REDIRECT_URL
 
-  if(fileReader.read == -1) {
+  if (fileReader.read == -1) {
     writer.write(headerString)
   }
 
@@ -47,22 +47,49 @@ class FileStore(private var filePath :String) extends TokenStore {
     try {
       val oauthToken: OAuthToken = token.asInstanceOf[OAuthToken]
       if (token.isInstanceOf[OAuthToken]) {
-        for ( i <- lines.indices ) {
-          val eachLine = lines(i).split(",")
+        for (i <- lines.indices) {
+          val nextRecord = lines(i).split(",")
 
-          if (this.checkTokenExists(user.getEmail, oauthToken, eachLine)) {
-            oauthToken.setAccessToken(eachLine(3))
+          if (this.checkTokenExists(user.getEmail, oauthToken, nextRecord)) {
 
-            oauthToken.setExpiresIn(eachLine(5))
+            val grantToken: String = if (nextRecord(6) != null && nextRecord(6).nonEmpty) {
+              nextRecord(6)
+            }
+            else {
+              null
+            }
 
-            oauthToken.setRefreshToken(eachLine(2))
+            val redirectURL: String = if (nextRecord(8) != null && nextRecord(8).nonEmpty) {
+              nextRecord(8)
+            }
+            else {
+              null
+            }
+
+            oauthToken.setId(nextRecord(0))
+
+            oauthToken.setUserMail(nextRecord(1))
+
+            oauthToken.setClientId(nextRecord(2))
+
+            oauthToken.setClientSecret(nextRecord(3))
+
+            oauthToken.setRefreshToken(nextRecord(4))
+
+            oauthToken.setAccessToken(nextRecord(5))
+
+            oauthToken.setGrantToken(grantToken)
+
+            oauthToken.setExpiresIn(String.valueOf(nextRecord(7)))
+
+            oauthToken.setRedirectURL(redirectURL)
 
             return oauthToken
           }
         }
       }
-    }catch {
-      case e : Exception =>
+    } catch {
+      case e: Exception =>
         throw new SDKException(Constants.TOKEN_STORE, Constants.GET_TOKEN_FILE_ERROR, e)
     }
     finally {
@@ -75,7 +102,7 @@ class FileStore(private var filePath :String) extends TokenStore {
   override def saveToken(user: UserSignature, token: Token): Unit = {
     val fileObject = new File(this.filePath)
 
-    val writer = new FileWriter(fileObject,true)
+    val writer = new FileWriter(fileObject, true)
 
     try {
       token match {
@@ -86,9 +113,11 @@ class FileStore(private var filePath :String) extends TokenStore {
 
           this.deleteToken(oauthToken)
 
-          var str: String = user.getEmail + "," + oauthToken.getClientID + "," + oauthToken.getRefreshToken + ","
+          var str: String = oauthToken.getId + "," + user.getEmail + "," + oauthToken.getClientId + "," + oauthToken.getClientSecret + ","
 
-          str += oauthToken.getAccessToken + "," + oauthToken.getGrantToken + "," + oauthToken.getExpiresIn
+          str += oauthToken.getRefreshToken + "," + oauthToken.getAccessToken + "," + oauthToken.getGrantToken + "," + oauthToken.getExpiresIn + ","
+
+          str += oauthToken.getRedirectURL
 
           writer.append("\n")
 
@@ -97,7 +126,7 @@ class FileStore(private var filePath :String) extends TokenStore {
       }
     }
     catch {
-      case e : Exception =>
+      case e: Exception =>
         throw new SDKException(Constants.TOKEN_STORE, Constants.SAVE_TOKEN_FILE_ERROR, e)
     }
     finally {
@@ -119,10 +148,10 @@ class FileStore(private var filePath :String) extends TokenStore {
         case token1: OAuthToken =>
           val oauthToken: OAuthToken = token1
 
-          for ( i <- lines.indices ) {
-            val eachLine = lines(i).split(",")
+          for (i <- lines.indices) {
+            val nextRecord = lines(i).split(",")
 
-            if (!this.checkTokenExists(oauthToken.getUserMail, oauthToken, eachLine)) {
+            if (!this.checkTokenExists(oauthToken.getUserMail, oauthToken, nextRecord)) {
               if (i != 0)
                 writer.write("\n")
 
@@ -133,7 +162,7 @@ class FileStore(private var filePath :String) extends TokenStore {
       }
     }
     catch {
-      case e : Exception =>
+      case e: Exception =>
         throw new SDKException(Constants.TOKEN_STORE, Constants.DELETE_TOKEN_FILE_ERROR, e)
     }
     finally {
@@ -141,25 +170,6 @@ class FileStore(private var filePath :String) extends TokenStore {
 
       writer.close()
     }
-  }
-
-  private def checkTokenExists(email :String, oauthToken: OAuthToken, row :Array[String]) : Boolean = {
-
-
-    if (email == null) throw new SDKException(Constants.USER_MAIL_NULL_ERROR, Constants.USER_MAIL_NULL_ERROR_MESSAGE)
-    val clientId = oauthToken.getClientID
-
-    val grantToken = oauthToken.getGrantToken
-
-    val refreshToken = oauthToken.getRefreshToken
-
-    val tokenCheck: Boolean = if (grantToken != null) grantToken.equals(row(4)) else refreshToken.equals(row(2))
-
-    if(row(0) == email && row(1) == clientId && tokenCheck) {
-      return true
-    }
-
-    false
   }
 
   /**
@@ -175,39 +185,42 @@ class FileStore(private var filePath :String) extends TokenStore {
     val lines = src.getLines.toList
 
     try {
-        for ( i <- lines.indices ) {
+      for (i <- lines.indices) {
 
-          val eachLine = lines(i).split(",")
+        val nextRecord = lines(i).split(",")
 
-          val tokenType = if (eachLine(4) != null && !eachLine(4).isEmpty) {
-            TokenType.GRANT
-          }
-          else {
-            TokenType.REFRESH
-          }
-
-          val tokenValue: String = if (tokenType.equals(TokenType.REFRESH)) {
-            eachLine(2)
-          }
-          else {
-            eachLine(4)
-          }
-
-          val token: OAuthToken = new OAuthToken(eachLine(1), null, tokenValue, tokenType)
-
-          token.setUserMail(eachLine(0))
-
-          token.setRefreshToken(eachLine(2))
-
-          token.setAccessToken(eachLine(3))
-
-          token.setExpiresIn(String.valueOf(eachLine(5)))
-
-          tokens.addOne(token)
-
+        val grantToken: String = if (nextRecord(6) != null && nextRecord(6).nonEmpty) {
+          nextRecord(6)
         }
-    }catch {
-      case e : Exception =>
+        else {
+          null
+        }
+
+        val redirectURL: String = if (nextRecord(8) != null && nextRecord(8).nonEmpty) {
+          nextRecord(8)
+        }
+        else {
+          null
+        }
+
+        val oauthToken: OAuthToken = new OAuthToken.Builder().clientID(nextRecord(2)).clientSecret(nextRecord(3))
+          .refreshToken(nextRecord(4)).grantToken(grantToken).build()
+
+        oauthToken.setId(nextRecord(0))
+
+        oauthToken.setUserMail(nextRecord(1))
+
+        oauthToken.setAccessToken(nextRecord(5))
+
+        oauthToken.setExpiresIn(String.valueOf(nextRecord(7)))
+
+        oauthToken.setRedirectURL(redirectURL)
+
+        tokens.addOne(oauthToken)
+
+      }
+    } catch {
+      case e: Exception =>
         throw new SDKException(Constants.TOKEN_STORE, Constants.GET_TOKENS_FILE_ERROR, e)
     }
     finally {
@@ -232,10 +245,88 @@ class FileStore(private var filePath :String) extends TokenStore {
       writer.write(this.headerString)
       writer.flush()
     }
-    catch
-    {
-      case e : Exception =>
+    catch {
+      case e: Exception =>
         throw new SDKException(Constants.TOKEN_STORE, Constants.DELETE_TOKENS_FILE_ERROR, e)
     }
+  }
+
+  private def checkTokenExists(email: String, oauthToken: OAuthToken, row: Array[String]): Boolean = {
+    if (email == null) throw new SDKException(Constants.USER_MAIL_NULL_ERROR, Constants.USER_MAIL_NULL_ERROR_MESSAGE)
+    val clientId = oauthToken.getClientId
+
+    val grantToken = oauthToken.getGrantToken
+
+    val refreshToken = oauthToken.getRefreshToken
+
+    val tokenCheck: Boolean = if (grantToken != null) grantToken.equals(row(6)) else refreshToken.equals(row(4))
+
+    if (row(1) == email && row(2) == clientId && tokenCheck) {
+      return true
+    }
+
+    false
+  }
+
+  override def getTokenById(id: String, token: Token): Token = {
+    val src = Source.fromFile(this.filePath)
+
+    val lines = src.getLines.toList
+
+    var isRowPresent: Boolean = false
+
+    try {
+      val oauthToken: OAuthToken = token.asInstanceOf[OAuthToken]
+      if (token.isInstanceOf[OAuthToken]) {
+        for (i <- lines.indices) {
+          val nextRecord = lines(i).split(",")
+
+          if (nextRecord(0) == id) {
+            isRowPresent = true
+            val grantToken: String = if (nextRecord(6) != null && nextRecord(6).nonEmpty) {
+              nextRecord(6)
+            }
+            else {
+              null
+            }
+
+            val redirectURL: String = if (nextRecord(8) != null && nextRecord(8).nonEmpty) {
+              nextRecord(8)
+            }
+            else {
+              null
+            }
+
+            oauthToken.setId(nextRecord(0))
+
+            oauthToken.setUserMail(nextRecord(1))
+
+            oauthToken.setClientId(nextRecord(2))
+
+            oauthToken.setClientSecret(nextRecord(3))
+
+            oauthToken.setRefreshToken(nextRecord(4))
+
+            oauthToken.setAccessToken(nextRecord(5))
+
+            oauthToken.setGrantToken(grantToken)
+
+            oauthToken.setExpiresIn(String.valueOf(nextRecord(7)))
+
+            oauthToken.setRedirectURL(redirectURL)
+
+            return oauthToken
+          }
+        }
+      }
+    } catch {
+      case e: Exception =>
+        throw new SDKException(Constants.TOKEN_STORE, Constants.GET_TOKEN_FILE_ERROR, e)
+    }
+    finally {
+      src.close()
+    }
+
+    null
   }
 }

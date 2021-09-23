@@ -6,12 +6,11 @@ import com.zoho.crm.api.util.{Constants, DataTypeConverter}
 import scala.collection.mutable
 import scala.collection.mutable.HashMap
 
-
 /**
  * This class represents the HTTP header name and value.
  */
 class HeaderMap {
-  private val headerHashMap:mutable.HashMap[String,String]= HashMap()
+  private val headerHashMap: mutable.HashMap[String, String] = HashMap()
 
   /**
    * This is a getter method to get header map.
@@ -24,7 +23,7 @@ class HeaderMap {
    * This method is to add header name and value.
    *
    * @param header A Header&lt;T&gt; class instance.
-   * @param value A T containing the header value.
+   * @param value  A T containing the header value.
    * @throws SDKException Exception
    */
   @throws[SDKException]
@@ -33,17 +32,17 @@ class HeaderMap {
     val headerName = header.getName
     if (headerName == null) throw new SDKException(Constants.HEADER_NAME_NULL_ERROR, Constants.HEADER_NAME_NULL_ERROR_MESSAGE)
     if (value == null) throw new SDKException(Constants.HEADER_NULL_ERROR, headerName + Constants.NULL_VALUE_ERROR_MESSAGE)
-    var headerValue:String = ""
+    var headerValue: String = ""
     try headerValue = DataTypeConverter.postConvert(value, value.getClass.getName).toString
     catch {
       case _: Exception =>
         headerValue = value.toString
     }
     if (headerHashMap.keySet.contains(headerName) && headerHashMap.get(headerName).isDefined) {
-      var existingHeaderValue:String = headerHashMap(headerName)
+      var existingHeaderValue: String = headerHashMap(headerName)
       existingHeaderValue = existingHeaderValue + "," + headerValue
-      headerHashMap(headerName)= existingHeaderValue
+      headerHashMap(headerName) = existingHeaderValue
     }
-    else headerHashMap(headerName)= headerValue
+    else headerHashMap(headerName) = headerValue
   }
 }

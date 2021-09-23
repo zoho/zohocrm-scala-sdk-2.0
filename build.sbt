@@ -2,10 +2,10 @@ import sbt.Keys.versionScheme
 
 name := "zohocrmsdk-2-0"
 scalaVersion := "2.13.5"
-organization:="com.zoho.crm"
-sonatypeProfileName :="com.zoho"
-organizationName:="zoho"
-organizationHomepage :=Some(url("https://www.zoho.com/crm/"))
+organization := "com.zoho.crm"
+sonatypeProfileName := "com.zoho"
+organizationName:= "zoho"
+organizationHomepage := Some(url("https://www.zoho.com/crm/"))
 description := "An API client for CRM customers, with which they can call ZOHO CRM APIs with ease"
 sonatypeCredentialHost := "s01.oss.sonatype.org"
 versionScheme := Some("semver-spec")
@@ -46,4 +46,3 @@ libraryDependencies ++= Seq(
   "org.apache.httpcomponents" % "httpmime" % "4.5",
   "org.apache.commons" % "commons-io" % "1.3.2"
 )
-

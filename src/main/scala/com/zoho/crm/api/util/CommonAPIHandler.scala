@@ -25,45 +25,49 @@ import scala.collection.mutable
  */
 class CommonAPIHandler {
 
-  private val LOGGER: Logger = Logger.getLogger(classOf[SDKLogger].getName)
+  private var apiPath: String = _
 
-  private var apiPath :String = _
+  private var param: ParameterMap = new ParameterMap()
 
-  private var categoryMethod: String = _
+  private var header: HeaderMap = new HeaderMap()
 
-  private var param :ParameterMap = new ParameterMap()
+  private var request: Any = _
 
-  private var header :HeaderMap = new HeaderMap()
+  private var httpMethod: String = _
 
-  private var request :Any = _
-
-  private var httpMethod :String = _
-
-  private var moduleAPIName:String = _
+  private var moduleAPIName: String = _
 
   private var contentType: String = _
 
-  private var mandatoryChecker: Boolean =_
+  private var categoryMethod: String = _
+
+  private var mandatoryChecker: Boolean = _
+
+  private val LOGGER: Logger = Logger.getLogger(classOf[SDKLogger].getName)
+
+  /**
+   * This is a setter method to set an API request content type.
+   *
+   * @param contentType A String containing the API request content type.
+   */
+  def setContentType(contentType: String) {
+    this.contentType = contentType
+  }
 
   /**
    * This is a setter method to set the API request URL.
+   *
    * @param apiPath A String containing the API request URL.
    */
   def setAPIPath(apiPath: String): Unit = {
     this.apiPath = apiPath
   }
 
-  def setMandatoryChecker(value: true): Unit={
-    this.mandatoryChecker = true
-  }
-
-  def getHttpMethod: String = this.httpMethod
-
-
   /**
    * This method is to add an API request parameter.
+   *
    * @param paramInstance A Param containing the API request parameter.
-   * @param paramValue A T containing the API request parameter value.
+   * @param paramValue    A T containing the API request parameter value.
    * @tparam T A T containing the specified method type.
    */
   def addParam[T](paramInstance: Param[T], paramValue: Option[T]): Unit = {
@@ -76,12 +80,12 @@ class CommonAPIHandler {
 
   /**
    * This method is to add an API request header.
+   *
    * @param headerInstance A Header containing the API request header .
-   * @param headerValue A T containing the API request header value.
+   * @param headerValue    A T containing the API request header value.
    * @tparam T A T containing the specified method type.
    */
   def addHeader[T](headerInstance: Header[T], headerValue: Option[T]): Unit = {
-
     if (headerValue.isEmpty) return
 
     if (this.header == null) this.header = new HeaderMap
@@ -91,29 +95,47 @@ class CommonAPIHandler {
 
   /**
    * This is a setter method to set the API request parameter map.
+   *
    * @param param A ParameterMap class instance containing the API request parameter.
    */
   def setParam(param: Option[ParameterMap]): Unit = {
     if (param.isEmpty) return
 
-    if (this.param.getParameterMap != null && this.param.getParameterMap.nonEmpty){
-      param.get.getParameterMap.foreach(entry=>{
-        this.param.getParameterMap(entry._1)=entry._2
+    if (this.param.getParameterMap != null && this.param.getParameterMap.nonEmpty) {
+      param.get.getParameterMap.foreach(entry => {
+        this.param.getParameterMap(entry._1) = entry._2
       })
     }
     else this.param = param.get
   }
 
   /**
+   * This is a getter method to get the Zoho CRM module API name.
+   *
+   * @return A String representing the Zoho CRM module API name.
+   */
+  def getModuleAPIName: String = moduleAPIName
+
+  /**
+   * This is a setter method to set the Zoho CRM module API name.
+   *
+   * @param moduleAPIName A String containing the Zoho CRM module API name.
+   */
+  def setModuleAPIName(moduleAPIName: String): Unit = {
+    this.moduleAPIName = moduleAPIName
+  }
+
+  /**
    * This is a setter method to set the API request header map.
+   *
    * @param header A HeaderMap class instance containing the API request header.
    */
   def setHeader(header: Option[HeaderMap]): Unit = {
     if (header.isEmpty) return
 
-    if (this.header.getHeaderMap != null && this.header.getHeaderMap.nonEmpty ){
-      header.get.getHeaderMap.foreach(entry=>{
-        this.header.getHeaderMap(entry._1)=entry._2
+    if (this.header.getHeaderMap != null && this.header.getHeaderMap.nonEmpty) {
+      header.get.getHeaderMap.foreach(entry => {
+        this.header.getHeaderMap(entry._1) = entry._2
       })
     }
     else this.header = header.get
@@ -121,6 +143,7 @@ class CommonAPIHandler {
 
   /**
    * This is a setter method to set the API request body object.
+   *
    * @param request A Object containing the API request body object.
    */
   def setRequest(request: Any): Unit = {
@@ -129,61 +152,23 @@ class CommonAPIHandler {
 
   /**
    * This is a setter method to set the HTTP API request method.
+   *
    * @param httpMethod A String containing the HTTP API request method.
    */
   def setHttpMethod(httpMethod: String): Unit = {
     this.httpMethod = httpMethod
   }
-  /**
-   * This is a setter method to set the category of request method.
-   * @param categoryMethod A String containing category of request method.
-   */
-  def setCategoryMethod(categoryMethod: String): Unit = {
-    this.categoryMethod = categoryMethod
-  }
-
-  def getAPIPath: String = apiPath
-
-
-  /**
-   * This is a getter method to get the Zoho CRM module API name.
-   * @return A String representing the Zoho CRM module API name.
-   */
-  def getModuleAPIName: String = moduleAPIName
-
-  /**
-   * This is a getter method to get the Category of the method.
-   * @return A String representing the Category of the method.
-   */
-  def getCategoryMethod: String = categoryMethod
-
-  def isMandatoryChecker:Boolean = mandatoryChecker
-
-  /**
-   * This is a setter method to set the Zoho CRM module API name.
-   * @param moduleAPIName A String containing the Zoho CRM module API name.
-   */
-  def setModuleAPIName(moduleAPIName: String): Unit = {
-    this.moduleAPIName = moduleAPIName
-  }
-
-  /**
-   * This is a setter method to set an API request content type.
-   * @param contentType A String containing the API request content type.
-   */
-  def setContentType(contentType: String){
-    this.contentType = contentType
-  }
 
   /**
    * This method is used in constructing API request and response details. To make the Zoho CRM API calls.
-   * @param className A Class[A] containing the method return type.
+   *
+   * @param className  A Class[A] containing the method return type.
    * @param encodeType A String containing the expected API response content type.
    * @tparam A A A containing the specified type method.
    * @see com.zoho.crm.api.util.APIHTTPConnector
    * @return A APIResponse[A] representing the Zoho CRM API response instance or null.
    */
-  def apiCall[A](className :Class[A], encodeType :String) :Option[APIResponse[A]] = {
+  def apiCall[A](className: Class[A], encodeType: String): Option[APIResponse[A]] = {
 
     if (Initializer.getInitializer == null) throw new SDKException(Constants.SDK_UNINITIALIZATION_ERROR, Constants.SDK_UNINITIALIZATION_MESSAGE)
     val connector = new APIHTTPConnector()
@@ -203,20 +188,19 @@ class CommonAPIHandler {
 
     connector.setContentType(this.contentType)
 
-    if(this.header != null && this.header.getHeaderMap.nonEmpty) {
+    if (this.header != null && this.header.getHeaderMap.nonEmpty) {
       connector.setHeaders(this.header.getHeaderMap)
     }
 
-    if(this.param != null && this.param.getParameterMap.nonEmpty) {
-
+    if (this.param != null && this.param.getParameterMap.nonEmpty) {
       connector.setParams(this.param.getParameterMap)
     }
 
     //authentication here
 
-    try{
+    try {
       val initializer = Initializer.getInitializer
-      initializer.synchronized{
+      initializer.synchronized {
         initializer.getToken.authenticate(connector)
       }
     }
@@ -232,11 +216,10 @@ class CommonAPIHandler {
 
     val pack = className.getCanonicalName
 
-    var convertInstance:Converter = null
-    if (this.contentType != null && Constants.IS_GENERATE_REQUEST_BODY.contains(httpMethod.toUpperCase()))
-    {
+    var convertInstance: Converter = null
+    if (this.contentType != null && Constants.IS_GENERATE_REQUEST_BODY.contains(httpMethod.toUpperCase())) {
 
-      var request:Any = null
+      var request: Any = null
 
       try {
         convertInstance = getConverterClassInstance(this.contentType.toLowerCase)
@@ -254,7 +237,7 @@ class CommonAPIHandler {
       connector.setRequestBody(request)
     }
     try {
-      connector.addHeader(Constants.ZOHO_SDK, System.getProperty("os.name") + "/" + System.getProperty("os.version") + " scala-" + Constants.ZOHO_API_VERSION + "/" + util.Properties.versionNumberString + ":" + Constants.SDK_VERSION)
+      connector.addHeader(Constants.ZOHO_SDK, System.getProperty("os.name") + "/" + System.getProperty("os.version") + "/scala-" + Constants.ZOHO_API_VERSION + "/" + util.Properties.versionNumberString + ":" + Constants.SDK_VERSION)
 
       val response = connector.fireRequest(convertInstance)
 
@@ -270,27 +253,60 @@ class CommonAPIHandler {
 
       convertInstance = getConverterClassInstance(mimeType.toLowerCase)
 
-      val returnObject:Option[Model] = convertInstance.getWrappedResponse(response, pack).asInstanceOf[Option[Model]]
+      val returnObject: Option[Model] = convertInstance.getWrappedResponse(response, pack).asInstanceOf[Option[Model]]
 
       if (returnObject.isDefined) if (pack.equals(returnObject.get.getClass.getCanonicalName) || isExpectedType(returnObject.get, pack)) isModel = true
 
       Option(new APIResponse[A](headerHashMap, statusCode, returnObject.getOrElse(None), isModel))
-    }catch {
+    } catch {
       case e: SDKException =>
         LOGGER.log(Level.SEVERE, Constants.API_CALL_EXCEPTION, e)
         throw e
       case e: Exception =>
-        val exception:SDKException = new SDKException(e)
+        val exception: SDKException = new SDKException(e)
         LOGGER.log(Level.SEVERE, Constants.API_CALL_EXCEPTION, exception)
         throw exception
     }
+  }
 
+  /**
+   * This method is used to get a Converter class instance.
+   *
+   * @param encodeType A String containing the API response content type.
+   * @return A Converter class instance.
+   */
+  def getConverterClassInstance(encodeType: String): Converter = {
+    encodeType match {
+      case "application/json" | "text/plain" | "application/ld+json" =>
+        new JSONConverter(this)
+      case "application/xml" | "text/xml" =>
+        new XMLConverter(this)
+      case "multipart/form-data" =>
+        new FormDataConverter(this)
+      case "text/html" | "application/x-download" | "image/png" | "application/octet-stream" | "image/jpeg" | "application/zip" | "image/gif" | "text/csv" | "image/tiff" | "font/ttf" | "video/3gpp2" | "video/3gpp" | "video/webm" | "video/mp4" | "video/mpeg" | "audio/3gpp2" | "audio/3gpp" | "audio/x-wav" | "image/svg+xml" | "image/bmp" | "image/webp" | "text/css" | "text/javascript" | "text/calendar" | "application/pdf" | "application/java-archive" | "application/javascript" | "application/xhtml+xml" | "application/x-bzip" | "application/msword" | "application/vnd.openxmlformats-officedocument.wordprocessingml.document" | "application/gzip" | "application/x-httpd-php" | "application/vnd.ms-powerpoint" | "application/vnd.rar" | "application/x-sh" | "application/x-tar" | "application/vnd.ms-excel" | "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" | "application/x-7z-compressed" | "audio/mpeg" | "audio/x-ms-wma" | "audio/vnd.rn-realaudio" =>
+        new Downloader(this)
+    }
+  }
+
+  def getHeaders(headers: Array[org.apache.http.Header]): mutable.HashMap[String, String] = {
+    val headerHashMap = new mutable.HashMap[String, String]
+    for (header <- headers) {
+      headerHashMap(header.getName) = header.getValue
+    }
+    headerHashMap
+  }
+
+  private def isExpectedType(model: Model, className: String): Boolean = {
+    val interfaces = model.getClass.getInterfaces
+    for (interfaceDetails <- interfaces) {
+      if (interfaceDetails.getCanonicalName == className) return true
+    }
+    false
   }
 
   @throws[SDKException]
   private def setAPIUrl(connector: APIHTTPConnector): Unit = {
     var APIPath: String = new String()
-
     if (apiPath.contains(Constants.HTTP)) {
       if (apiPath.contains(Constants.CONTENT_API_URL)) {
         APIPath = APIPath.concat(Initializer.getInitializer.getEnvironment.getFileUploadUrl)
@@ -310,7 +326,7 @@ class CommonAPIHandler {
       else {
         if (apiPath.substring(0, 1).equalsIgnoreCase("/")) apiPath = apiPath.substring(1)
 
-          APIPath = APIPath.concat(apiPath)
+        APIPath = APIPath.concat(apiPath)
       }
     } else {
       APIPath = APIPath.concat(Initializer.getInitializer.getEnvironment.getUrl)
@@ -321,55 +337,29 @@ class CommonAPIHandler {
     connector.setUrl(APIPath)
   }
 
+  def isMandatoryChecker: Boolean = mandatoryChecker
+
+  def setMandatoryChecker(mandatoryChecker: Boolean): Unit = {
+    this.mandatoryChecker = mandatoryChecker
+  }
+
+  def getHttpMethod: String = this.httpMethod
 
   /**
-   * This method is used to get a Converter class instance.
-   * @param encodeType A String containing the API response content type.
-   * @return A Converter class instance.
+   * This is a getter method to get the Category of the method.
+   *
+   * @return A String representing the Category of the method.
    */
-  def getConverterClassInstance(encodeType: String): Converter = {
+  def getCategoryMethod: String = categoryMethod
 
-
-    encodeType match {
-
-      case "application/json" | "text/plain" | "application/ld+json" =>
-
-        new JSONConverter(this)
-
-      case "application/xml" | "text/xml" =>
-
-        new XMLConverter(this)
-
-      case "multipart/form-data" =>
-
-        new FormDataConverter(this)
-
-      case "text/html"|"application/x-download" | "image/png"|"application/octet-stream" | "image/jpeg" | "application/zip" |"image/gif" |"text/csv" | "image/tiff"|"font/ttf"|"video/3gpp2"|"video/3gpp"|"video/webm"|"video/mp4"|"video/mpeg"|"audio/3gpp2"|"audio/3gpp"|"audio/x-wav"|"image/svg+xml"| "image/bmp"|"image/webp"|"text/css"|"text/javascript"| "text/calendar"|"application/pdf"|"application/java-archive"|"application/javascript"|"application/xhtml+xml"|"application/x-bzip"|"application/msword"|"application/vnd.openxmlformats-officedocument.wordprocessingml.document"|"application/gzip"|"application/x-httpd-php"|"application/vnd.ms-powerpoint"|"application/vnd.rar"|"application/x-sh"|"application/x-tar"|"application/vnd.ms-excel"|"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"|"application/x-7z-compressed"|"audio/mpeg"|"audio/x-ms-wma"|"audio/vnd.rn-realaudio" =>
-
-        new Downloader(this)
-
-    }
+  /**
+   * This is a setter method to set the category of request method.
+   *
+   * @param categoryMethod A String containing category of request method.
+   */
+  def setCategoryMethod(categoryMethod: String): Unit = {
+    this.categoryMethod = categoryMethod
   }
 
-  def getHeaders(headers: Array[org.apache.http.Header]):mutable.HashMap[String,String] = {
-
-    val headerHashMap = new mutable.HashMap[String,String]
-
-    for (header <- headers) {
-
-      headerHashMap(header.getName)= header.getValue
-    }
-
-    headerHashMap
-  }
-
-  private def isExpectedType(model: Model, className: String): Boolean = {
-    val interfaces = model.getClass.getInterfaces
-    for ( interfaceDetails <- interfaces ) {
-      if (interfaceDetails.getCanonicalName == className) return true
-    }
-    false
-  }
-
-
+  def getAPIPath: String = apiPath
 }

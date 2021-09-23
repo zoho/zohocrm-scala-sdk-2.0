@@ -8,11 +8,8 @@ import org.json.JSONObject
  * This class processes the API response object to the POJO object and POJO object to an XML object.
  */
 class XMLConverter(commonAPIHandler: CommonAPIHandler) extends Converter(commonAPIHandler) {
-
-
   @throws[Exception]
   def appendToRequest(requestBase: HttpEntityEnclosingRequestBase, requestObject: Any): Unit = {
-    // TODO Auto-generated method stub
   }
 
   @throws[Exception]

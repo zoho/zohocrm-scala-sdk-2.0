@@ -11,14 +11,14 @@ import scala.collection.mutable
  * This class represents the HTTP parameter name and value.
  */
 class ParameterMap {
-  private val parameterHashMap:mutable.HashMap[String,String] =mutable.HashMap()
+  private val parameterHashMap: mutable.HashMap[String, String] = mutable.HashMap()
 
   /**
    * This is a getter method to get parameter map.
    *
    * @return A HashMap&lt;String, String&gt; representing the API request parameters.
    */
-  def getParameterMap: mutable.HashMap[String,String] = parameterHashMap
+  def getParameterMap: mutable.HashMap[String, String] = parameterHashMap
 
   /**
    * This method to add parameter name and value.
@@ -42,8 +42,8 @@ class ParameterMap {
     if (parameterHashMap.keySet.contains(paramName) && parameterHashMap.get(paramName).isDefined) {
       var existingParamValue:String = parameterHashMap(paramName)
       existingParamValue = existingParamValue + "," + paramValue
-      parameterHashMap(paramName)= existingParamValue
+      parameterHashMap(paramName) = existingParamValue
     }
-    else parameterHashMap(paramName)= paramValue
+    else parameterHashMap(paramName) = paramValue
   }
 }

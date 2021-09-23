@@ -13,11 +13,12 @@ import scala.collection.mutable
 /**
  * This class is to initialize the SDK logger.
  */
-object SDKLogger{
+object SDKLogger {
   private val LOGGER: Logger = Logger.getLogger(classOf[SDKLogger].getName)
 
   /**
    * Creates an User SDKLogger instance with the specified Logger class instance.
+   *
    * @param logger A Logger class instance.
    */
   def initialize(logger: com.zoho.api.logger.Logger): Unit = {
@@ -26,15 +27,15 @@ object SDKLogger{
 
   private class Formatter extends java.util.logging.Formatter {
     override def format(record: LogRecord): String = {
-      val sb=new mutable.StringBuilder
+      val sb = new mutable.StringBuilder
 
       sb.append(new Date(record.getMillis)).append(" ").append(record.getLoggerName).append(": ").append(record.getLevel.getLocalizedName).append(" ").append(record.getSourceClassName).append(" ").append(record.getSourceMethodName).append(": ").append(formatMessage(record))
 
-      if(record.getThrown!=null){
-        try{
-          val sw=new StringWriter
+      if (record.getThrown != null) {
+        try {
+          val sw = new StringWriter
 
-          val pw=new PrintWriter(sw)
+          val pw = new PrintWriter(sw)
 
           record.getThrown.printStackTrace(pw)
 
@@ -42,8 +43,8 @@ object SDKLogger{
 
           sb.append(" ").append(sw.toString)
         }
-        catch{
-          case ex: Exception => Logger.getGlobal.log(Level.INFO,ex.toString)
+        catch {
+          case ex: Exception => Logger.getGlobal.log(Level.INFO, ex.toString)
         }
       }
 
@@ -53,10 +54,10 @@ object SDKLogger{
     }
   }
 }
-class SDKLogger protected(logger: com.zoho.api.logger.Logger) {
-  try{
 
-    if(logger.getFilePath!=null&&logger.getFilePath!=""){
+class SDKLogger protected(logger: com.zoho.api.logger.Logger) {
+  try {
+    if (logger.getFilePath != null && logger.getFilePath != "") {
       val fileHandler: FileHandler = new FileHandler(logger.getFilePath, true)
 
       LOGGER.addHandler(fileHandler)
@@ -66,11 +67,11 @@ class SDKLogger protected(logger: com.zoho.api.logger.Logger) {
       fileHandler.setFormatter(new Formatter)
     }
 
-    if(logger.getLevel!=null&&Constants.LOGGER_LEVELS.contains(logger.getLevel)){
+    if (logger.getLevel != null && Constants.LOGGER_LEVELS.contains(logger.getLevel)) {
       LOGGER.setLevel(Constants.LOGGER_LEVELS(logger.getLevel))
     }
   }
-  catch{
-    case e:Exception=> throw new SDKException(Constants.SDK_LOGGER_INITIALIZE, e)
+  catch {
+    case e: Exception => throw new SDKException(Constants.SDK_LOGGER_INITIALIZE, e)
   }
 }

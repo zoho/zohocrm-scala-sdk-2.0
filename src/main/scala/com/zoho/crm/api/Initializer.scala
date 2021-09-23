@@ -5,22 +5,133 @@ import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.logging.Level
 import java.util.logging.Logger
-
 import _root_.org.json.JSONObject
 import com.zoho.api.authenticator.Token
 import com.zoho.api.authenticator.store.TokenStore
+import com.zoho.api.authenticator.store.FileStore
 import com.zoho.crm.api.dc.DataCenter
 import com.zoho.crm.api.dc.DataCenter.Environment
-import com.zoho.api.logger.Logger.Levels
-import com.zoho.api.logger.SDKLogger
 import com.zoho.crm.api.exception.SDKException
 import com.zoho.crm.api.util.Constants
+import com.zoho.crm.api.util.Utility
 
 /**
  * This object is to initialize Zoho CRM SDK.
  */
 object Initializer {
-  private val LOGGER: Logger = Logger.getLogger(classOf[SDKLogger].getName)
+  class Builder() {
+		private var environment: Environment = _
+		
+		private var store: TokenStore = _
+		
+		private var user: UserSignature = _
+		
+		private var token: Token = _
+		
+		private var resourcePath: String =_
+		
+		private var requestProxy: RequestProxy = _
+		
+		private var sdkConfig: SDKConfig = _
+		
+		private var logger: com.zoho.api.logger.Logger = _
+		
+		private val errorMessage: String = if (Initializer.initializer != null) Constants.SWITCH_USER_ERROR else Constants.INITIALIZATION_ERROR
+    
+    def Builder(): Unit = {
+      if(Initializer.getInitializer != null) {
+        val previousInitializer: Initializer = Initializer.getInitializer
+          
+        this.user = previousInitializer.user
+
+        this.environment = previousInitializer.environment
+
+        this.token = previousInitializer.token
+
+        this.sdkConfig = previousInitializer.sdkConfig
+      }
+    }
+
+    def initialize(): Unit = {
+			Utility.assertNotNull(user, errorMessage, Constants.USER_SIGNATURE_ERROR_MESSAGE)
+			
+			Utility.assertNotNull(environment, errorMessage, Constants.ENVIRONMENT_ERROR_MESSAGE)
+			
+			Utility.assertNotNull(token, errorMessage, Constants.TOKEN_ERROR_MESSAGE)
+
+      if(store == null) {
+        store = new FileStore(System.getProperty("user.dir") + File.separator + Constants.TOKEN_FILE)
+      }
+
+      if(sdkConfig == null) {
+        this.sdkConfig = new com.zoho.crm.api.SDKConfig.Builder().build
+      }
+
+      if(resourcePath == null) {
+        resourcePath = System.getProperty("user.dir")
+      }
+
+			if(logger == null) {
+				logger = new com.zoho.api.logger.Logger.Builder().level(com.zoho.api.logger.Logger.Levels.INFO).filePath(System.getProperty("user.dir") + File.separator + Constants.LOG_FILE_NAME).build
+			}
+			
+			Initializer.initialize(user, environment, token, store, sdkConfig, resourcePath, logger, requestProxy)
+		}
+		
+		def switchUser(): Unit = {
+			Utility.assertNotNull(Initializer.initializer, Constants.SDK_UNINITIALIZATION_ERROR, Constants.SDK_UNINITIALIZATION_MESSAGE)
+
+			Initializer.switchUser(user, environment, token, sdkConfig, requestProxy)
+		}
+		
+    def logger(logger: com.zoho.api.logger.Logger): Initializer.Builder = {
+			this.logger = logger
+      this
+		}
+
+    def token(token: Token): Initializer.Builder = {
+			Utility.assertNotNull(token, errorMessage, Constants.TOKEN_ERROR_MESSAGE)
+			this.token = token
+			this
+		}
+
+    def SDKConfig(sdkConfig: SDKConfig) : Initializer.Builder = {
+			this.sdkConfig = sdkConfig
+      this
+		}
+		
+		def requestProxy(requestProxy: RequestProxy) : Initializer.Builder = {
+			this.requestProxy = requestProxy
+			this
+		}
+
+    def resourcePath(resourcePath: String) : Initializer.Builder = {
+      if(resourcePath != null && !new File(resourcePath).isDirectory()) {
+				throw new SDKException(errorMessage, Constants.RESOURCE_PATH_INVALID_ERROR_MESSAGE)
+			}
+			this.resourcePath = resourcePath
+      this
+		}
+
+    def user(user: UserSignature): Initializer.Builder = {
+			Utility.assertNotNull(user, errorMessage, Constants.USER_SIGNATURE_ERROR_MESSAGE)
+			this.user = user
+			this
+		}
+		
+		def store(store: TokenStore): Initializer.Builder = {
+			this.store = store
+      this
+		}
+
+    def environment(environment: Environment): Initializer.Builder = {
+			Utility.assertNotNull(environment, errorMessage, Constants.ENVIRONMENT_ERROR_MESSAGE)
+			this.environment = environment
+			this
+		}
+	}
+
+  private val LOGGER: Logger = Logger.getLogger(classOf[com.zoho.api.logger.SDKLogger].getName)
 
   var jsonDetails: JSONObject = _
 
@@ -29,20 +140,9 @@ object Initializer {
   private var initializer: Initializer = _
 
   @throws[SDKException]
-  def initialize(user: UserSignature, environment: Environment, token: Token, store: TokenStore, sdkConfig: SDKConfig, resourcePath: String, logger: Option[com.zoho.api.logger.Logger]=None, proxy: Option[RequestProxy]=None): Unit = {
+  def initialize(user: UserSignature, environment: Environment, token: Token, store: TokenStore, sdkConfig: SDKConfig, resourcePath: String, logger: com.zoho.api.logger.Logger, proxy: RequestProxy): Unit = {
     try {
-      var logger1 = logger.orNull
-      if (user == null) throw new SDKException(Constants.INITIALIZATION_ERROR, Constants.USERSIGNATURE_ERROR_MESSAGE)
-      if (environment == null) throw new SDKException(Constants.INITIALIZATION_ERROR, Constants.ENVIRONMENT_ERROR_MESSAGE)
-      if (token == null) throw new SDKException(Constants.INITIALIZATION_ERROR, Constants.TOKEN_ERROR_MESSAGE)
-      if (store == null) throw new SDKException(Constants.INITIALIZATION_ERROR, Constants.STORE_ERROR_MESSAGE)
-      if (sdkConfig == null) throw new SDKException(Constants.INITIALIZATION_ERROR, Constants.SDK_CONFIG_ERROR_MESSAGE)
-      if (resourcePath == null || resourcePath.isEmpty) throw new SDKException(Constants.INITIALIZATION_ERROR, Constants.RESOURCE_PATH_ERROR_MESSAGE)
-      if (logger1 == null) {
-        val filePath = System.getProperty("user.dir") + File.separator + Constants.LOGFILE_NAME
-        logger1 = com.zoho.api.logger.Logger.getInstance(Levels.INFO, filePath)
-      }
-      SDKLogger.initialize(logger1)
+      com.zoho.api.logger.SDKLogger.initialize(logger)
       try jsonDetails = getJSONDetails
       catch {
         case e: IOException =>
@@ -55,8 +155,7 @@ object Initializer {
       initializer.store = store
       initializer.sdkConfig = sdkConfig
       initializer.resourcePath = resourcePath
-      initializer.requestProxy = proxy.orNull
-
+      initializer.requestProxy = proxy
       LOGGER.log(Level.INFO, Constants.INITIALIZATION_SUCCESSFUL.concat(initializer.toString))
     } catch {
       case e: SDKException =>
@@ -66,47 +165,7 @@ object Initializer {
     }
   }
 
-  /**
-   * This method to get Initializer class instance.
-   *
-   * @return A Initializer class instance representing the SDK configuration details.
-   */
-  def getInitializer: Initializer = {
-    if (LOCAL.get != null) return LOCAL.get
-    initializer
-  }
-
-
-  /**
-   * The method to switch the different user in SDK environment.
-   *
-   * @param user        A User class instance represents the CRM user.
-   * @param environment A Environment class instance containing the CRM API base URL and Accounts URL.
-   * @param token       A Token class instance containing the OAuth client application information.
-   * @param sdkConfig   A SDKConfig class instance containing the configuration.
-   * @param proxy       An RequestProxy class instance containing the proxy properties of the user.
-   * @throws SDKException Exception
-   */
-  @throws[SDKException]
-  def switchUser(user: UserSignature, environment: Environment, token: Token, sdkConfig: SDKConfig, proxy: Option[RequestProxy]=None): Unit = {
-    if (user == null) throw new SDKException(Constants.SWITCH_USER_ERROR, Constants.USERSIGNATURE_ERROR_MESSAGE)
-    if (environment == null) throw new SDKException(Constants.SWITCH_USER_ERROR, Constants.ENVIRONMENT_ERROR_MESSAGE)
-    if (token == null) throw new SDKException(Constants.SWITCH_USER_ERROR, Constants.TOKEN_ERROR_MESSAGE)
-    if (sdkConfig == null) throw new SDKException(Constants.SWITCH_USER_ERROR, Constants.SDK_CONFIG_ERROR_MESSAGE)
-    val initializer = new Initializer
-    initializer.user = user
-    initializer.environment = environment
-    initializer.token = token
-    initializer.store = Initializer.initializer.store
-    initializer.sdkConfig = sdkConfig
-    initializer.resourcePath = Initializer.initializer.resourcePath
-    initializer.requestProxy = proxy.orNull
-    LOCAL.set(initializer)
-    LOGGER.log(Level.INFO, Constants.INITIALIZATION_SWITCHED.concat(initializer.toString))
-  }
-
   def getJSONDetails :JSONObject = {
-
     var is:InputStream = null
 
     var isr:InputStreamReader = null
@@ -121,12 +180,13 @@ object Initializer {
         isr = new InputStreamReader(is)
 
         br = new BufferedReader(isr)
-        var line:String  = br.readLine
+        
+        var line: String  = br.readLine
+        
         while(line != null) {
           fileContent += line
           line = br.readLine
         }
-
     } catch {
       case e: Exception =>
         LOGGER.log(Level.FINE, Constants.EXCEPTION_JSONDETAILS, e)
@@ -135,8 +195,31 @@ object Initializer {
       if (isr != null) isr.close()
       if (is != null) is.close()
     }
-
     new JSONObject(fileContent)
+  }
+
+  /**
+   * The method to switch the different user in SDK environment.
+   *
+   * @param user        A User class instance represents the CRM user.
+   * @param environment A Environment class instance containing the CRM API base URL and Accounts URL.
+   * @param token       A Token class instance containing the OAuth client application information.
+   * @param sdkConfig   A SDKConfig class instance containing the configuration.
+   * @param proxy       An RequestProxy class instance containing the proxy properties of the user.
+   * @throws SDKException Exception
+   */
+  @throws[SDKException]
+  def switchUser(user: UserSignature, environment: Environment, token: Token, sdkConfig: SDKConfig, proxy: RequestProxy): Unit = {
+    val initializer = new Initializer
+    initializer.user = user
+    initializer.environment = environment
+    initializer.token = token
+    initializer.store = Initializer.initializer.store
+    initializer.sdkConfig = sdkConfig
+    initializer.resourcePath = Initializer.initializer.resourcePath
+    initializer.requestProxy = proxy
+    LOCAL.set(initializer)
+    LOGGER.log(Level.INFO, Constants.INITIALIZATION_SWITCHED.concat(initializer.toString))
   }
 
   /**
@@ -149,13 +232,22 @@ object Initializer {
   def getJSON(filePath: String): JSONObject = {
     new JSONObject(new String(Files.readAllBytes(Paths.get(filePath))))
   }
+
+  /**
+   * This method to get Initializer class instance.
+   *
+   * @return A Initializer class instance representing the SDK configuration details.
+   */
+  def getInitializer: Initializer = {
+    if (LOCAL.get != null) return LOCAL.get
+    initializer
+  }
 }
 
 /**
  * This class contains necessary objects to initialize Zoho CRM SDK.
  */
 class Initializer {
-
   private var environment: Environment = _
   private var user: UserSignature = _
   private var token: Token = _
@@ -163,6 +255,12 @@ class Initializer {
   private var resourcePath: String = _
   private var requestProxy: RequestProxy = _
   private var sdkConfig: SDKConfig = _
+
+  /**
+   * This is a getter method to get API environment.
+   * @return A Environment representing the API environment.
+   */
+  def getEnvironment: DataCenter.Environment = Initializer.getInitializer.environment
 
   /**
    * This is a getter method to get API Token Store.
@@ -182,13 +280,6 @@ class Initializer {
    */
   def getToken: Token = Initializer.getInitializer.token
 
-  /**
-   * This is a getter method to get API environment.
-   * @return A Environment representing the API environment.
-   */
-  def getEnvironment: DataCenter.Environment = Initializer.getInitializer.environment
-
-
   def getResourcePath: String = resourcePath
 
   /**
@@ -204,7 +295,6 @@ class Initializer {
    * @return A SDKConfig instance representing the configuration
    */
   def getSDKConfig: SDKConfig = sdkConfig
-
 
   override def toString: String = Constants.FOR_EMAIL_ID.concat(Initializer.getInitializer.getUser.getEmail).concat(Constants.IN_ENVIRONMENT).concat(Initializer.getInitializer.getEnvironment.getUrl).concat(".")
 }

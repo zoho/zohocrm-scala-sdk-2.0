@@ -7,7 +7,7 @@ import scala.collection.mutable.ArrayBuffer
 class MassUpdateBodyWrapper extends Model	{
 	private var data:ArrayBuffer[Record] = _
 	private var cvid:Option[String] = None
-	private var ids:ArrayBuffer[Long] = _
+	private var ids:ArrayBuffer[String] = _
 	private var territory:Option[Territory] = None
 	private var overWrite:Option[Boolean] = None
 	private var criteria:ArrayBuffer[Criteria] = _
@@ -31,11 +31,11 @@ class MassUpdateBodyWrapper extends Model	{
 		 this.keyModified("cvid") = 1
 	}
 
-	def getIds() :ArrayBuffer[Long]	={
+	def getIds() :ArrayBuffer[String]	={
 		return  this.ids
 	}
 
-	def setIds( ids: ArrayBuffer[Long]) 	={
+	def setIds( ids: ArrayBuffer[String]) 	={
 		 this.ids = ids
 		 this.keyModified("ids") = 1
 	}

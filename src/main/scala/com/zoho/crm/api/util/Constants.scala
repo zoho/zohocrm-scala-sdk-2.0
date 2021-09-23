@@ -30,10 +30,10 @@ object Constants {
   val UNSUPPORTED_IN_API_MESSAGE = " Operation is not supported by API"
 
   val KEYS_TO_SKIP = new ArrayBuffer[String]()
-  KEYS_TO_SKIP+=("Created_Time", "Modified_Time", "Created_By", "Modified_By", "Tag")
+  KEYS_TO_SKIP += ("Created_Time", "Modified_Time", "Created_By", "Modified_By", "Tag")
 
   var SET_TO_CONTENT_TYPE = new ArrayBuffer[String]()
-  SET_TO_CONTENT_TYPE+=("/crm/bulk/v2/read", "/crm/bulk/v2/write")
+  SET_TO_CONTENT_TYPE += ("/crm/bulk/v2/read", "/crm/bulk/v2/write")
 
   val API_EXCEPTION = "API_EXCEPTION"
 
@@ -100,7 +100,7 @@ object Constants {
   val EVENTS = "Events"
 
   val INVENTORY_MODULES = new ArrayBuffer[String]()
-  INVENTORY_MODULES+=("invoices", "sales_orders", "purchase_orders", "quotes")
+  INVENTORY_MODULES += ("invoices", "sales_orders", "purchase_orders", "quotes")
 
 
   val CALLS = "Calls"
@@ -239,7 +239,7 @@ object Constants {
 
   val MODULEPACKAGENAME = "modulePackageName"
 
-  val MODULEDETAILS ="moduleDetails"
+  val MODULEDETAILS = "moduleDetails"
 
   val REQUEST_CATEGORY_READ = "READ"
 
@@ -257,7 +257,7 @@ object Constants {
 
   val ATTACHMENT_ID = "attachment_id"
 
-  val FILE_ID ="file_id"
+  val FILE_ID = "file_id"
 
   val REQUIRED_IN_UPDATE = "required_in_update"
 
@@ -265,11 +265,11 @@ object Constants {
 
   val SKIP_MANDATORY = "skip_mandatory"
 
-  val KEY_MODIFIED ="keyModified"
+  val KEY_MODIFIED = "keyModified"
 
   val MODULE = "Module"
 
-  val PRIMARY ="primary"
+  val PRIMARY = "primary"
 
   val PRICINGDETAILS = "com.zoho.crm.api.record.PricingDetails"
 
@@ -341,11 +341,13 @@ object Constants {
 
   val CODE = "code"
 
-  val LOGFILE_NAME = "SDKLogs.log"
+  val LOG_FILE_NAME = "sdk_logs.log"
+
+  val TOKEN_FILE = "sdk_tokens.txt"
 
   val ZOHO_SDK = "X-ZOHO-SDK"
 
-  val SDK_VERSION = "1.0.0"
+  val SDK_VERSION = "2.0.0"
 
   val ZOHO_API_VERSION = "2.0"
 
@@ -355,10 +357,9 @@ object Constants {
 
   val MYSQL_USER_NAME = "root"
 
-  val DATA_TYPE:mutable.HashMap[String,String] =new mutable.HashMap[String, String]
-  DATA_TYPE("java.util.List")="scala.collection.mutable.ArrayBuffer"
-  DATA_TYPE("java.util.HashMap")="scala.collection.mutable.HashMap"
-
+  val DATA_TYPE: mutable.HashMap[String, String] = new mutable.HashMap[String, String]
+  DATA_TYPE("java.util.List") = "scala.collection.mutable.ArrayBuffer"
+  DATA_TYPE("java.util.HashMap") = "scala.collection.mutable.HashMap"
 
   val MYSQL_PORT_NUMBER = "3306"
 
@@ -510,39 +511,121 @@ object Constants {
 
   val REQUEST_METHOD_POST = "POST"
 
-	val REQUEST_METHOD_PUT = "PUT"
+  val REQUEST_METHOD_PUT = "PUT"
 
-	val REQUEST_METHOD_GET = "GET"
+  val REQUEST_METHOD_GET = "GET"
 
-	val REQUEST_METHOD_DELETE = "DELETE"
+  val REQUEST_METHOD_DELETE = "DELETE"
 
-  val IS_GENERATE_REQUEST_BODY =  new ArrayBuffer[String]()
+  val IS_GENERATE_REQUEST_BODY = new ArrayBuffer[String]()
   IS_GENERATE_REQUEST_BODY += (Constants.REQUEST_METHOD_PATCH, Constants.REQUEST_METHOD_POST, Constants.REQUEST_METHOD_PUT)
 
-  val PHOTO = "photo";
+  val PHOTO = "photo"
 
-  val  CRM = "crm";
+  val CRM = "crm"
 
-  val API_VERSION = "v2";
+  val API_VERSION = "v2"
 
-  val PHOTO_SUPPORTED_MODULES =  new ArrayBuffer[String]()
+  val PHOTO_SUPPORTED_MODULES = new ArrayBuffer[String]()
   PHOTO_SUPPORTED_MODULES += ("leads", "contacts", "accounts", "products", "vendors")
 
-  val PHOTO_UPLOAD_ERROR_MESSAGE  = "The given module is not supported in API."
+  val PHOTO_UPLOAD_ERROR_MESSAGE = "The given module is not supported in API."
 
-  val INVALID_MODULE  = "INVALID_MODULE"
+  val INVALID_MODULE = "INVALID_MODULE"
 
   val GIVEN_VALUE = "given-value"
 
+  val MYSQL_TABLE_NAME = "oauthtoken"
 
-  LOGGER_LEVELS("ALL")= Level.ALL
-  LOGGER_LEVELS("FINEST")= Level.FINEST
-  LOGGER_LEVELS("TRACE")= Level.FINER
-  LOGGER_LEVELS("DEBUG")= Level.FINE
-  LOGGER_LEVELS("CONFIG")= Level.CONFIG
-  LOGGER_LEVELS("INFO") =Level.INFO
-  LOGGER_LEVELS("WARNING")= Level.WARNING
-  LOGGER_LEVELS("ERROR") =Level.SEVERE
-  LOGGER_LEVELS("OFF")= Level.OFF
+  val REDIRECT_URL = "redirect_url"
 
+  val TOKEN_ERROR = "TOKEN ERROR"
+
+  val CLIENT_ID_NULL_ERROR_MESSAGE = "ClientID MUST NOT be null"
+
+  val CLIENT_SECRET_NULL_ERROR_MESSAGE = "ClientSecret MUST NOT be null"
+
+  val NULL_ERROR = "NULL ERROR"
+
+  val EXPECTED_TOKEN_TYPES = "Expecting Refresh or Grant token"
+
+  val NO_ACCESS_TOKEN_ERROR = "ACCESS TOKEN IS NOT PRESENT IN RESPONSE"
+
+  val USER_SIGNATURE_ERROR_MESSAGE = "UserSignature MUST NOT be null."
+
+  val RESOURCE_PATH_INVALID_ERROR_MESSAGE = "Resource Path MUST be a valid directory."
+
+  val SDK_MODULE_METADATA = "SDK-MODULE-METADATA"
+
+  val SKIP_MODULES = new ArrayBuffer[String]()
+  SKIP_MODULES += ("deals")
+
+  val GENERATED_TYPE = "generated_type"
+
+  val GENERATED_TYPE_CUSTOM = "custom"
+
+  val UPLOAD_PHOTO_UNSUPPORTED_ERROR = "UPLOAD PHOTO UNSUPPORTED MODULE"
+
+  val UPLOAD_PHOTO_UNSUPPORTED_MESSAGE = "Photo Upload Operation is not supported by the module: "
+
+  val OAUTH_MANDATORY_KEYS = new ArrayBuffer[String]()
+  OAUTH_MANDATORY_KEYS += ("grantToken", "refreshToken", "id", "accessToken")
+
+  val DEFAULT_MODULENAME_VS_APINAME: mutable.HashMap[String, String] = new mutable.HashMap[String, String]
+
+  DEFAULT_MODULENAME_VS_APINAME("leads") = "Leads"
+
+  DEFAULT_MODULENAME_VS_APINAME("contacts") = "Contacts"
+
+  DEFAULT_MODULENAME_VS_APINAME("accounts") = "Accounts"
+
+  DEFAULT_MODULENAME_VS_APINAME("deals") = "Deals"
+
+  DEFAULT_MODULENAME_VS_APINAME("tasks") = "Tasks"
+
+  DEFAULT_MODULENAME_VS_APINAME("events") = "Events"
+
+  DEFAULT_MODULENAME_VS_APINAME("activities") = "Activities"
+
+  DEFAULT_MODULENAME_VS_APINAME("calls") = "Calls"
+
+  DEFAULT_MODULENAME_VS_APINAME("products") = "Products"
+
+  DEFAULT_MODULENAME_VS_APINAME("quotes") = "Quotes"
+
+  DEFAULT_MODULENAME_VS_APINAME("sales_orders") = "Sales_Orders"
+
+  DEFAULT_MODULENAME_VS_APINAME("purchase_orders") = "Purchase_Orders"
+
+  DEFAULT_MODULENAME_VS_APINAME("invoices") = "Invoices"
+
+  DEFAULT_MODULENAME_VS_APINAME("campaigns") = "Campaigns"
+
+  DEFAULT_MODULENAME_VS_APINAME("vendors") = "Vendors"
+
+  DEFAULT_MODULENAME_VS_APINAME("price_books") = "Price_Books"
+
+  DEFAULT_MODULENAME_VS_APINAME("cases") = "Cases"
+
+  DEFAULT_MODULENAME_VS_APINAME("solutions") = "Solutions"
+
+  DEFAULT_MODULENAME_VS_APINAME("visits") = "Visits"
+
+  DEFAULT_MODULENAME_VS_APINAME("approvals") = "Approvals"
+
+  DEFAULT_MODULENAME_VS_APINAME("notes") = "Notes"
+
+  DEFAULT_MODULENAME_VS_APINAME("attachments") = "Attachments"
+
+  LOGGER_LEVELS("ALL") = Level.ALL
+  LOGGER_LEVELS("FINEST") = Level.FINEST
+  LOGGER_LEVELS("TRACE") = Level.FINER
+  LOGGER_LEVELS("DEBUG") = Level.FINE
+  LOGGER_LEVELS("CONFIG") = Level.CONFIG
+  LOGGER_LEVELS("INFO") = Level.INFO
+  LOGGER_LEVELS("WARNING") = Level.WARNING
+  LOGGER_LEVELS("ERROR") = Level.SEVERE
+  LOGGER_LEVELS("OFF") = Level.OFF
+
+  val SCALA = "scala_"
 }

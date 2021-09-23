@@ -6,18 +6,15 @@ import java.io.InputStream
 
 import com.zoho.crm.api.exception.SDKException
 
-
 /**
  * This class handles the file stream and name.
  */
 
-class StreamWrapper (var name: Option[String]=None, var stream: Option[InputStream]=None) {
-
+class StreamWrapper(var name: Option[String] = None, var stream: Option[InputStream] = None) {
   def this(filePath: String) {
     this()
 
     try {
-
       val file = new File(filePath)
       this.name = Option(file.getName)
       this.stream = Option(new FileInputStream(file))
@@ -28,17 +25,19 @@ class StreamWrapper (var name: Option[String]=None, var stream: Option[InputStre
     }
   }
 
-    /**
-    * This is a getter method to get the file name.
-    * @return A String representing the file name.
-    */
-    def getName: Option[String] = name
+  /**
+   * This is a getter method to get the file name.
+   *
+   * @return A String representing the file name.
+   */
+  def getName: Option[String] = name
 
-    /**
-     * This is a getter method to get the file input stream.
-     * @return A InputStream representing the file input stream.
-     */
-    def getStream: Option[InputStream] = stream
+  /**
+   * This is a getter method to get the file input stream.
+   *
+   * @return A InputStream representing the file input stream.
+   */
+  def getStream: Option[InputStream] = stream
 
 }
 
