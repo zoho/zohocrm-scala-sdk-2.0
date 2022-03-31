@@ -259,11 +259,11 @@ object Constants {
 
   val FILE_ID = "file_id"
 
-  val REQUIRED_IN_UPDATE = "required_in_update"
+  val REQUIRED_IN_UPDATE = "required-in-update"
 
   val LOOKUP = "lookup"
 
-  val SKIP_MANDATORY = "skip_mandatory"
+  val SKIP_MANDATORY = "skip-mandatory"
 
   val KEY_MODIFIED = "keyModified"
 
@@ -347,7 +347,7 @@ object Constants {
 
   val ZOHO_SDK = "X-ZOHO-SDK"
 
-  val SDK_VERSION = "2.0.0"
+  val SDK_VERSION = "3.0.0"
 
   val ZOHO_API_VERSION = "2.0"
 
@@ -628,4 +628,6 @@ object Constants {
   LOGGER_LEVELS("OFF") = Level.OFF
 
   val SCALA = "scala_"
+
+  val OWNER_LOOKUP = "ownerlookup"
 }

@@ -50,7 +50,7 @@ Scala SDK requires java (version 8 and above) and scala version 2.13 and above t
 Scala SDK is available through Maven distribution. You can include the SDK to your project using:
 1. Build.sbt
     ```
-    libraryDependencies ++= Seq( "com.zoho.crm" % "zohocrmsdk-2-0" % "2.x.x")
+    libraryDependencies ++= Seq( "com.zoho.crm" % "zohocrmsdk-2-0" % "3.x.x")
     ```
 2. Maven
 
@@ -62,7 +62,7 @@ Scala SDK is available through Maven distribution. You can include the SDK to yo
         <dependency>
             <groupId>com.zoho.crm</groupId>
             <artifactId>zohocrmsdk-2-0</artifactId>
-            <version>2.x.x</version>
+            <version>3.x.x</version>
         </dependency>
     </dependencies>
     ```
@@ -72,11 +72,11 @@ Scala SDK is available through Maven distribution. You can include the SDK to yo
     ```gradle
  
     dependencies{
-        implementation 'com.zoho.crm:zohocrmsdk-2-0:2.x.x'
+        implementation 'com.zoho.crm:zohocrmsdk-2-0:3.x.x'
     }
      ```
 
-4. Downloadable JARs ([by Zoho](https://www.zoho.com/sites/default/files/crm/zohocrmsdk-2-0-2.0.0.zip))
+4. Downloadable JARs ([by Zoho](https://www.zoho.com/sites/default/files/crm/zohocrmsdk-2-0-3.0.0.zip))
  
 
 ### Dependency JARs
@@ -331,7 +331,7 @@ Before you get started with creating your Scala application, you need to registe
     /*
         * Configure the environment
         * which is of the pattern Domain.Environment
-        * Available Domains: USDataCenter, EUDataCenter, INDataCenter, CNDataCenter, AUDataCenter
+        * Available Domains: USDataCenter, EUDataCenter, INDataCenter, CNDataCenter, AUDataCenter,JPDataCenter
         * Available Environments: PRODUCTION, DEVELOPER, SANDBOX
     */
     val env = USDataCenter.PRODUCTION
@@ -515,7 +515,7 @@ object Initialize {
     /*
      * Configure the environment
      * which is of the pattern Domain.Environment
-     * Available Domains: USDataCenter, EUDataCenter, INDataCenter, CNDataCenter, AUDataCenter
+     * Available Domains: USDataCenter, EUDataCenter, INDataCenter, CNDataCenter, AUDataCenter,JPDataCenter
      * Available Environments: PRODUCTION, DEVELOPER, SANDBOX
      */
     val env = USDataCenter.PRODUCTION
@@ -967,7 +967,7 @@ object Record {
     /*
       * Configure the environment
       * which is of the pattern Domain.Environment
-      * Available Domains: USDataCenter, EUDataCenter, INDataCenter, CNDataCenter, AUDataCenter
+      * Available Domains: USDataCenter, EUDataCenter, INDataCenter, CNDataCenter, AUDataCenter,JPDataCenter
       * Available Environments: PRODUCTION, DEVELOPER, SANDBOX
     */
     val environment = USDataCenter.PRODUCTION
