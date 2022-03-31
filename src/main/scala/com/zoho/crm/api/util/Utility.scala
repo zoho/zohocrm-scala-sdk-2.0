@@ -731,7 +731,7 @@ object  Utility {
     
     if (apiType.toLowerCase.contains(Constants.LOOKUP)) fieldDetail.put(Constants.LOOKUP, true)
 
-    if (apiType.toLowerCase.equalsIgnoreCase(Constants.CONSENT_LOOKUP)) fieldDetail.put(Constants.SKIP_MANDATORY, true)
+    if (apiType.toLowerCase.equalsIgnoreCase(Constants.CONSENT_LOOKUP) || apiType.toLowerCase().equalsIgnoreCase(Constants.OWNER_LOOKUP)) fieldDetail.put(Constants.SKIP_MANDATORY, true)
 
     if (apiTypeVsStructureName.contains(apiType)) fieldDetail.put(Constants.STRUCTURE_NAME, apiTypeVsStructureName(apiType))
 
